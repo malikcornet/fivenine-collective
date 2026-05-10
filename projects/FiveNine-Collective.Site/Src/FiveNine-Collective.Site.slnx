@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="FiveNine-Collective.Site.AppHost/FiveNine-Collective.Site.AppHost.csproj" />
+  <Project Path="FiveNine-Collective.Site.Server/FiveNine-Collective.Site.Server.csproj" />
+  <Project Path="frontend/frontend.esproj">
+    <Build />
+    <Deploy />
+  </Project>
+</Solution>
