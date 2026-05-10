@@ -20,7 +20,7 @@ function App() {
     setError(null)
     
     try {
-      const response = await fetch('/api/weatherforecast')
+      const response = await fetch(`${import.meta.env.VITE_API_URL ?? ''}/api/weatherforecast`)
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
