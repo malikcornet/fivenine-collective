@@ -5,7 +5,7 @@ var server = builder.AddProject<Projects.FiveNine_Collective_Site_Server>("serve
     .WithExternalHttpEndpoints();
 
 var webfrontend = builder.AddViteApp("webfrontend", "../frontend")
-    .WithEndpoint("http", e => e.Port = 5173)
+    .WithEndpoint("http", e => { e.Port = 5173; e.IsProxied = false; })
     .WithReference(server)
     .WaitFor(server);
 
