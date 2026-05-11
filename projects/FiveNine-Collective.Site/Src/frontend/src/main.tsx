@@ -14,6 +14,8 @@ createRoot(document.getElementById('root')!).render(
         audience: import.meta.env.VITE_AUTH0_AUDIENCE,
         scope: 'openid profile email read:data',
       }}
+      useRefreshTokens={true}
+      cacheLocation="localstorage"
     >
       <App />
     </Auth0Provider>
