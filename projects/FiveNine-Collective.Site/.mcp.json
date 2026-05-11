@@ -1,8 +1,8 @@
 {
   "mcpServers": {
     "aspire": {
-      "type": "sse",
-      "url": "http://localhost:18116/mcp"
+      "command": "aspire",
+      "args": ["mcp", "start"]
     }
   }
 }
