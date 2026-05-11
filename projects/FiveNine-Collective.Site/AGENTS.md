@@ -39,9 +39,45 @@ Use the `mcp__auth0__*` tools for Auth0 operations (list/get/update applications
 
 | List | Values |
 |---|---|
-| Callbacks | `http://localhost:5173`, `http://localhost:5173/callback`, `https://frontend-production-b973e.up.railway.app`, `https://frontend-production-b973e.up.railway.app/callback` |
-| Logout URLs | `http://localhost:5173`, `https://frontend-production-b973e.up.railway.app` |
-| Web Origins | `http://localhost:5173`, `https://frontend-production-b973e.up.railway.app` |
+| Callbacks | `http://localhost:5173`, `http://localhost:5173/callback`, `http://webfrontend-fivenine_collective_site.dev.localhost:5173`, `http://webfrontend-fivenine_collective_site.dev.localhost:5173/callback`, `https://frontend-production-b973e.up.railway.app`, `https://frontend-production-b973e.up.railway.app/callback` |
+| Logout URLs | `http://localhost:5173`, `http://webfrontend-fivenine_collective_site.dev.localhost:5173`, `https://frontend-production-b973e.up.railway.app` |
+| Web Origins | `http://localhost:5173`, `http://webfrontend-fivenine_collective_site.dev.localhost:5173`, `https://frontend-production-b973e.up.railway.app` |
+
+#### Auth0 SPA app — refresh tokens
+
+Refresh Token Rotation is **enabled** (`rotation_type: rotating`, 30-day lifetime, 15-day idle). The frontend sets `useRefreshTokens={true}` and `cacheLocation="localstorage"`. If you see `feacft` failures in Auth0 logs about rotating refresh tokens, rotation has been disabled — re-enable it via the Auth0 MCP or dashboard.
+
+## Local development
+
+Start the AppHost from Visual Studio using the **https** profile. This orchestrates all services via .NET Aspire.
+
+### Fixed local ports (https profile — set in `Src/FiveNine-Collective.Site.AppHost/Properties/launchSettings.json`)
+
+| Service | URL |
+|---|---|
+| Aspire Dashboard | `https://fivenine_collective_site.dev.localhost:17162` |
+| Backend API | `https://server-fivenine_collective_site.dev.localhost:7377` |
+| Frontend | `http://webfrontend-fivenine_collective_site.dev.localhost:5173` |
+
+The Vite dev server proxies `/api/*` to the backend using `SERVER_HTTPS` / `SERVER_HTTP` env vars injected by Aspire.
+
+### Aspire MCP
+
+The `.mcp.json` configures `aspire mcp start` (stdio transport) — the MCP server starts automatically, no manual command needed.
+
+**Version requirement**: The Aspire CLI and AppHost SDK must match. Both are currently **13.3.0**. If you see `GetDashboardUrlsAsync` or `GetResourceSnapshotsAsync` RPC errors, update `Src/FiveNine-Collective.Site.AppHost/FiveNine-Collective.Site.AppHost.csproj` to match `aspire --version`.
+
+When the AppHost is started from Visual Studio (not `aspire run`), call `select_apphost` with the full path to the `.csproj` before using other Aspire MCP tools.
+
+### Local frontend env vars
+
+Lives in `Src/frontend/.env.local` (not committed):
+
+| Variable | Value |
+|---|---|
+| `VITE_AUTH0_DOMAIN` | `fivenine.eu.auth0.com` |
+| `VITE_AUTH0_CLIENT_ID` | `N5BHrtQZDyKpENk8HlfZhENmDNvkskoG` |
+| `VITE_AUTH0_AUDIENCE` | `https://api.fivenine.collective` |
 
 ## Environment variables
 
