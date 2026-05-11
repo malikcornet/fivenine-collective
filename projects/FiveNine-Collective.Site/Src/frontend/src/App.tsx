@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useAuth0 } from '@auth0/auth0-react'
 import aspireLogo from '/Aspire.png'
 import './App.css'
 
@@ -10,6 +11,7 @@ interface WeatherForecast {
 }
 
 function App() {
+  const { isAuthenticated, isLoading: authLoading, loginWithRedirect, logout, user, getAccessTokenSilently } = useAuth0()
   const [weatherData, setWeatherData] = useState<WeatherForecast[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -18,14 +20,17 @@ function App() {
   const fetchWeatherForecast = async () => {
     setLoading(true)
     setError(null)
-    
+
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL ?? ''}/api/weatherforecast`)
-      
+      const token = await getAccessTokenSilently()
+      const response = await fetch(`${import.meta.env.VITE_API_URL ?? ''}/api/weatherforecast`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
-      
+
       const data: WeatherForecast[] = await response.json()
       setWeatherData(data)
     } catch (err) {
@@ -37,23 +42,63 @@ function App() {
   }
 
   useEffect(() => {
-    fetchWeatherForecast()
-  }, [])
+    if (isAuthenticated) {
+      fetchWeatherForecast()
+    }
+  }, [isAuthenticated])
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString(undefined, { 
-      weekday: 'short', 
-      month: 'short', 
-      day: 'numeric' 
+    return new Date(dateString).toLocaleDateString(undefined, {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
     })
+  }
+
+  if (authLoading) {
+    return (
+      <div className="app-container">
+        <div className="loading-skeleton" role="status" aria-live="polite" aria-label="Authenticating">
+          <span className="visually-hidden">Authenticating...</span>
+        </div>
+      </div>
+    )
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="app-container">
+        <header className="app-header">
+          <a
+            href="https://aspire.dev"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Visit Aspire website (opens in new tab)"
+            className="logo-link"
+          >
+            <img src={aspireLogo} className="logo" alt="Aspire logo" />
+          </a>
+          <h1 className="app-title">Aspire Starter</h1>
+          <p className="app-subtitle">Modern distributed application development</p>
+        </header>
+        <main className="main-content">
+          <div className="card" style={{ textAlign: 'center', padding: '2rem' }}>
+            <p style={{ marginBottom: '1rem' }}>Sign in to view the weather forecast.</p>
+            <button className="refresh-button" onClick={() => loginWithRedirect()} type="button">
+              Sign In
+            </button>
+          </div>
+        </main>
+      </div>
+    )
   }
 
   return (
     <div className="app-container">
       <header className="app-header">
-        <a 
-          href="https://aspire.dev" 
-          target="_blank" 
+        <a
+          href="https://aspire.dev"
+          target="_blank"
           rel="noopener noreferrer"
           aria-label="Visit Aspire website (opens in new tab)"
           className="logo-link"
@@ -62,6 +107,16 @@ function App() {
         </a>
         <h1 className="app-title">Aspire Starter</h1>
         <p className="app-subtitle">Modern distributed application development</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.5rem' }}>
+          {user?.name && <span style={{ fontSize: '0.875rem' }}>{user.name}</span>}
+          <button
+            className="refresh-button"
+            onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}
+            type="button"
+          >
+            Sign Out
+          </button>
+        </div>
       </header>
 
       <main className="main-content">
@@ -72,7 +127,7 @@ function App() {
               <div className="header-actions">
                 <fieldset className="toggle-switch" aria-label="Temperature unit selection">
                   <legend className="visually-hidden">Temperature unit</legend>
-                  <button 
+                  <button
                     className={`toggle-option ${!useCelsius ? 'active' : ''}`}
                     onClick={() => setUseCelsius(false)}
                     aria-pressed={!useCelsius}
@@ -81,7 +136,7 @@ function App() {
                     <span aria-hidden="true">°F</span>
                     <span className="visually-hidden">Fahrenheit</span>
                   </button>
-                  <button 
+                  <button
                     className={`toggle-option ${useCelsius ? 'active' : ''}`}
                     onClick={() => setUseCelsius(true)}
                     aria-pressed={useCelsius}
@@ -91,20 +146,20 @@ function App() {
                     <span className="visually-hidden">Celsius</span>
                   </button>
                 </fieldset>
-                <button 
+                <button
                   className="refresh-button"
-                  onClick={fetchWeatherForecast} 
+                  onClick={fetchWeatherForecast}
                   disabled={loading}
                   aria-label={loading ? 'Loading weather forecast' : 'Refresh weather forecast'}
                   type="button"
                 >
-                  <svg 
+                  <svg
                     className={`refresh-icon ${loading ? 'spinning' : ''}`}
-                    width="20" 
-                    height="20" 
-                    viewBox="0 0 24 24" 
-                    fill="none" 
-                    stroke="currentColor" 
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
                     strokeWidth="2"
                     aria-hidden="true"
                     focusable="false"
@@ -115,7 +170,7 @@ function App() {
                 </button>
               </div>
             </div>
-            
+
             {error && (
               <div className="error-message" role="alert" aria-live="polite">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -126,7 +181,7 @@ function App() {
                 <span>{error}</span>
               </div>
             )}
-            
+
             {loading && weatherData.length === 0 && (
               <div className="loading-skeleton" role="status" aria-live="polite" aria-label="Loading weather data">
                 {[...Array(5)].map((_, i) => (
@@ -135,7 +190,7 @@ function App() {
                 <span className="visually-hidden">Loading weather forecast data...</span>
               </div>
             )}
-            
+
             {weatherData.length > 0 && (
               <div className="weather-grid">
                 {weatherData.map((forecast, index) => (
@@ -165,9 +220,9 @@ function App() {
           <a href="https://aspire.dev" target="_blank" rel="noopener noreferrer">
             Learn more about Aspire<span className="visually-hidden"> (opens in new tab)</span>
           </a>
-          <a 
-            href="https://github.com/dotnet/aspire" 
-            target="_blank" 
+          <a
+            href="https://github.com/dotnet/aspire"
+            target="_blank"
             rel="noopener noreferrer"
             className="github-link"
             aria-label="View Aspire on GitHub (opens in new tab)"
