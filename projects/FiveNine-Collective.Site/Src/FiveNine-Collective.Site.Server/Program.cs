@@ -1,4 +1,7 @@
+using System.Security.Claims;
+using FiveNine_Collective_Site_Server.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,7 +22,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 builder.Services.AddAuthorization();
 
+builder.AddNpgsqlDbContext<AppDbContext>("fiveninedb");
+
 var app = builder.Build();
+
+// Apply migrations on startup
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await db.Database.MigrateAsync();
+}
 
 app.UseExceptionHandler();
 app.UseCors();
@@ -34,6 +46,7 @@ if (app.Environment.IsDevelopment())
 string[] summaries = ["Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"];
 
 var api = app.MapGroup("/api");
+
 api.MapGet("weatherforecast", () =>
 {
     var forecast = Enumerable.Range(1, 5).Select(index =>
@@ -49,6 +62,45 @@ api.MapGet("weatherforecast", () =>
 .WithName("GetWeatherForecast")
 .RequireAuthorization();
 
+// GET /api/account/me — returns the current user's account, or 404 if not onboarded
+api.MapGet("account/me", async (ClaimsPrincipal user, AppDbContext db) =>
+{
+    var sub = user.FindFirstValue(ClaimTypes.NameIdentifier)
+              ?? user.FindFirstValue("sub");
+    if (sub is null) return Results.Unauthorized();
+
+    var account = await db.UserAccounts.SingleOrDefaultAsync(a => a.Auth0Sub == sub);
+    return account is null
+        ? Results.NotFound()
+        : Results.Ok(new AccountDto(account.DisplayName, account.Bio, account.CreatedAt));
+})
+.WithName("GetMyAccount")
+.RequireAuthorization();
+
+// POST /api/account/onboard — creates the account on first login
+api.MapPost("account/onboard", async (ClaimsPrincipal user, OnboardRequest req, AppDbContext db) =>
+{
+    var sub = user.FindFirstValue(ClaimTypes.NameIdentifier)
+              ?? user.FindFirstValue("sub");
+    if (sub is null) return Results.Unauthorized();
+
+    if (await db.UserAccounts.AnyAsync(a => a.Auth0Sub == sub))
+        return Results.Conflict("Account already exists.");
+
+    var account = new UserAccount
+    {
+        Auth0Sub = sub,
+        DisplayName = req.DisplayName.Trim(),
+        Bio = req.Bio?.Trim(),
+    };
+    db.UserAccounts.Add(account);
+    await db.SaveChangesAsync();
+
+    return Results.Created($"/api/account/me", new AccountDto(account.DisplayName, account.Bio, account.CreatedAt));
+})
+.WithName("OnboardAccount")
+.RequireAuthorization();
+
 app.MapDefaultEndpoints();
 
 app.UseFileServer();
@@ -59,3 +111,6 @@ record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
 {
     public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
 }
+
+record AccountDto(string DisplayName, string? Bio, DateTime CreatedAt);
+record OnboardRequest(string DisplayName, string? Bio);

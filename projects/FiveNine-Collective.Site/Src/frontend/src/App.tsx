@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { useAuth0 } from '@auth0/auth0-react'
 import aspireLogo from '/Aspire.png'
 import './App.css'
+import { useAccount } from './hooks/useAccount'
+import { OnboardingForm } from './components/OnboardingForm'
 
 interface WeatherForecast {
   date: string
@@ -12,6 +14,7 @@ interface WeatherForecast {
 
 function App() {
   const { isAuthenticated, isLoading: authLoading, loginWithRedirect, logout, user, getAccessTokenSilently } = useAuth0()
+  const { state: accountState, onboard } = useAccount()
   const [weatherData, setWeatherData] = useState<WeatherForecast[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -55,14 +58,20 @@ function App() {
     })
   }
 
-  if (authLoading) {
+  if (authLoading || (isAuthenticated && accountState.status === 'loading')) {
     return (
       <div className="app-container">
         <div className="loading-skeleton" role="status" aria-live="polite" aria-label="Authenticating">
-          <span className="visually-hidden">Authenticating...</span>
+          <span className="visually-hidden">
+            {authLoading ? 'Authenticating...' : 'Loading your profile...'}
+          </span>
         </div>
       </div>
     )
+  }
+
+  if (isAuthenticated && accountState.status === 'needs-onboarding') {
+    return <OnboardingForm onSubmit={onboard} />
   }
 
   if (!isAuthenticated) {
@@ -108,7 +117,11 @@ function App() {
         <h1 className="app-title">Aspire Starter</h1>
         <p className="app-subtitle">Modern distributed application development</p>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.5rem' }}>
-          {user?.name && <span style={{ fontSize: '0.875rem' }}>{user.name}</span>}
+          {(accountState.status === 'onboarded' ? accountState.account.displayName : user?.name) && (
+            <span style={{ fontSize: '0.875rem' }}>
+              {accountState.status === 'onboarded' ? accountState.account.displayName : user?.name}
+            </span>
+          )}
           <button
             className="refresh-button"
             onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}

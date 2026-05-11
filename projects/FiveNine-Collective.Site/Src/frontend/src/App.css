@@ -764,6 +764,47 @@
   }
 }
 
+/* Form fields */
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.form-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.form-input {
+  background: var(--weather-card-bg);
+  border: 1px solid var(--weather-card-border);
+  border-radius: 0.5rem;
+  color: var(--text-primary);
+  font-size: 0.9375rem;
+  padding: 0.625rem 0.875rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--accent-gradient-start);
+  box-shadow: 0 0 0 3px rgba(124, 146, 245, 0.2);
+}
+
+.form-input::placeholder {
+  color: var(--text-tertiary);
+  opacity: 0.7;
+}
+
+.form-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
   *,
