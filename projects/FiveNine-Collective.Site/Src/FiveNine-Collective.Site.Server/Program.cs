@@ -30,7 +30,16 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    await db.Database.MigrateAsync();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<AppDbContext>>();
+    try
+    {
+        await db.Database.MigrateAsync();
+    }
+    catch (Exception ex)
+    {
+        logger.LogCritical(ex, "Database migration failed on startup");
+        throw;
+    }
 }
 
 app.UseExceptionHandler();
@@ -112,5 +121,5 @@ record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
     public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
 }
 
-record AccountDto(string DisplayName, string? Bio, DateTime CreatedAt);
+record AccountDto(string DisplayName, string? Bio, DateTimeOffset CreatedAt);
 record OnboardRequest(string DisplayName, string? Bio);
