@@ -71,7 +71,7 @@ function App() {
   }
 
   if (isAuthenticated && accountState.status === 'needs-onboarding') {
-    return <OnboardingForm onSubmit={onboard} />
+    return <OnboardingForm onSubmit={(displayName, dateOfBirth, bio) => onboard(displayName, dateOfBirth, bio)} />
   }
 
   if (!isAuthenticated) {

@@ -9,6 +9,8 @@ public class UserAccount
 
     public required string DisplayName { get; set; }
 
+    public DateOnly? DateOfBirth { get; set; }
+
     public string? Bio { get; set; }
 
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;

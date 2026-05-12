@@ -3,6 +3,7 @@ import { useAuth0 } from '@auth0/auth0-react'
 
 export interface Account {
   displayName: string
+  dateOfBirth: string | null
   bio: string | null
   createdAt: string
 }
@@ -44,7 +45,7 @@ export function useAccount() {
   }, [isAuthenticated, fetchAccount])
 
   const onboard = useCallback(
-    async (displayName: string, bio: string) => {
+    async (displayName: string, dateOfBirth: string, bio: string) => {
       const token = await getAccessTokenSilently()
       const res = await fetch(`${import.meta.env.VITE_API_URL ?? ''}/api/account/onboard`, {
         method: 'POST',
@@ -52,7 +53,7 @@ export function useAccount() {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ displayName, bio: bio || null }),
+        body: JSON.stringify({ displayName, dateOfBirth, bio: bio || null }),
       })
       if (!res.ok) {
         const text = await res.text()
