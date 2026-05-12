@@ -60,7 +60,6 @@ export function useAccount() {
       }
       const account: Account = await res.json()
       setState({ status: 'onboarded', account })
-      return account
     },
     [getAccessTokenSilently],
   )
