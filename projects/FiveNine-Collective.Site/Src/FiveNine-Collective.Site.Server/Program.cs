@@ -26,7 +26,19 @@ builder.AddNpgsqlDbContext<AppDbContext>("fiveninedb");
 
 var app = builder.Build();
 
-// Apply migrations on startup
+// --migrate-only: apply pending migrations then exit (used as Railway preDeployCommand)
+if (args.Contains("--migrate-only"))
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<AppDbContext>>();
+    logger.LogInformation("Running pre-deploy migrations");
+    await db.Database.MigrateAsync();
+    logger.LogInformation("Pre-deploy migrations complete");
+    return;
+}
+
+// Apply migrations on startup (fallback if pre-deploy command did not run)
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();

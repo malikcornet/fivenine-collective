@@ -103,7 +103,19 @@ Lives in `Src/frontend/.env.local` (not committed):
 | `VITE_AUTH0_AUDIENCE` | `https://api.fivenine.collective` |
 | `VITE_API_URL` | `https://${{server.RAILWAY_PUBLIC_DOMAIN}}` |
 
+Watch pattern: `projects/FiveNine-Collective.Site/Src/frontend/**`
+
 ### Railway — server service
 
 Auth0 config is baked into `appsettings.json` (`Auth0:Domain`, `Auth0:Audience`) — no env vars needed for auth.
-`ALLOWED_ORIGINS` is set to `https://frontend-production-b973e.up.railway.app`.
+
+| Variable | Value |
+|---|---|
+| `ALLOWED_ORIGINS` | `https://${{frontend.RAILWAY_PUBLIC_DOMAIN}}` |
+| `ConnectionStrings__fiveninedb` | `Host=${{Postgres.PGHOST}};Port=5432;Database=${{Postgres.PGDATABASE}};Username=${{Postgres.PGUSER}};Password=${{Postgres.PGPASSWORD}};SSL Mode=Require;Trust Server Certificate=true` |
+
+Watch pattern: `projects/FiveNine-Collective.Site/Src/FiveNine-Collective.Site.Server/**`
+
+Health check path: `/health` (from Aspire service defaults — Railway waits for 200 before routing traffic).
+
+Pre-deploy command: `dotnet FiveNine-Collective.Site.Server.dll --migrate-only` — runs EF Core migrations before the new instance starts serving. The app also runs migrations on startup as a fallback. Pass `--migrate-only` to add a new migration runner entry point (see `Program.cs`).
