@@ -26,6 +26,19 @@ projects/FiveNine-Collective.Site/Src/
 
 Use the `railway:use-railway` skill for Railway operations. Always pass explicit project/environment IDs rather than relying on `railway link`.
 
+**Variable convention — never hardcode URLs between services.** Use Railway template references so the dashboard shows dependency arrows and values stay in sync automatically:
+
+```
+# Good — reference another service's variable
+VITE_API_URL=https://${{server.RAILWAY_PUBLIC_DOMAIN}}
+ConnectionStrings__fiveninedb=Host=${{Postgres.PGHOST}};...
+
+# Bad — hardcoded URL
+VITE_API_URL=https://server-production-fa4f.up.railway.app
+```
+
+Use `${{ServiceName.RAILWAY_PRIVATE_DOMAIN}}` for server-to-server connections (avoids egress fees). Use `${{ServiceName.RAILWAY_PUBLIC_DOMAIN}}` only when the connection originates outside Railway's network (e.g. a browser SPA calling an API).
+
 ### Auth0
 
 - **Dashboard**: https://manage.auth0.com/dashboard/eu/fivenine/
@@ -88,7 +101,7 @@ Lives in `Src/frontend/.env.local` (not committed):
 | `VITE_AUTH0_DOMAIN` | `fivenine.eu.auth0.com` |
 | `VITE_AUTH0_CLIENT_ID` | `N5BHrtQZDyKpENk8HlfZhENmDNvkskoG` |
 | `VITE_AUTH0_AUDIENCE` | `https://api.fivenine.collective` |
-| `VITE_API_URL` | `https://server-production-fa4f.up.railway.app` |
+| `VITE_API_URL` | `https://${{server.RAILWAY_PUBLIC_DOMAIN}}` |
 
 ### Railway — server service
 
