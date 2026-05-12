@@ -93,7 +93,7 @@ api.MapGet("account/me", async (ClaimsPrincipal user, AppDbContext db) =>
     var account = await db.UserAccounts.SingleOrDefaultAsync(a => a.Auth0Sub == sub);
     return account is null
         ? Results.NotFound()
-        : Results.Ok(new AccountDto(account.DisplayName, account.DateOfBirth, account.Bio, account.CreatedAt));
+        : Results.Ok(new AccountDto(account.FirstName, account.LastName, account.DateOfBirth, account.Bio, account.CreatedAt));
 })
 .WithName("GetMyAccount")
 .RequireAuthorization();
@@ -111,14 +111,15 @@ api.MapPost("account/onboard", async (ClaimsPrincipal user, OnboardRequest req, 
     var account = new UserAccount
     {
         Auth0Sub = sub,
-        DisplayName = req.DisplayName.Trim(),
+        FirstName = req.FirstName.Trim(),
+        LastName = req.LastName.Trim(),
         DateOfBirth = req.DateOfBirth,
         Bio = req.Bio?.Trim(),
     };
     db.UserAccounts.Add(account);
     await db.SaveChangesAsync();
 
-    return Results.Created($"/api/account/me", new AccountDto(account.DisplayName, account.DateOfBirth, account.Bio, account.CreatedAt));
+    return Results.Created($"/api/account/me", new AccountDto(account.FirstName, account.LastName, account.DateOfBirth, account.Bio, account.CreatedAt));
 })
 .WithName("OnboardAccount")
 .RequireAuthorization();
@@ -134,5 +135,5 @@ record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
     public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
 }
 
-record AccountDto(string DisplayName, DateOnly? DateOfBirth, string? Bio, DateTimeOffset CreatedAt);
-record OnboardRequest(string DisplayName, DateOnly DateOfBirth, string? Bio);
+record AccountDto(string FirstName, string LastName, DateOnly? DateOfBirth, string? Bio, DateTimeOffset CreatedAt);
+record OnboardRequest(string FirstName, string LastName, DateOnly DateOfBirth, string? Bio);

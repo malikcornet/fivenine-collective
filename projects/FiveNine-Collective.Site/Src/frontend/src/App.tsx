@@ -71,7 +71,7 @@ function App() {
   }
 
   if (isAuthenticated && accountState.status === 'needs-onboarding') {
-    return <OnboardingForm onSubmit={(displayName, dateOfBirth, bio) => onboard(displayName, dateOfBirth, bio)} />
+    return <OnboardingForm onSubmit={(firstName, lastName, dateOfBirth, bio) => onboard(firstName, lastName, dateOfBirth, bio)} />
   }
 
   if (!isAuthenticated) {
@@ -117,9 +117,9 @@ function App() {
         <h1 className="app-title">Aspire Starter</h1>
         <p className="app-subtitle">Modern distributed application development</p>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.5rem' }}>
-          {(accountState.status === 'onboarded' ? accountState.account.displayName : user?.name) && (
+          {(accountState.status === 'onboarded' ? `${accountState.account.firstName} ${accountState.account.lastName}` : user?.name) && (
             <span style={{ fontSize: '0.875rem' }}>
-              {accountState.status === 'onboarded' ? accountState.account.displayName : user?.name}
+              {accountState.status === 'onboarded' ? `${accountState.account.firstName} ${accountState.account.lastName}` : user?.name}
             </span>
           )}
           <button

@@ -7,7 +7,9 @@ public class UserAccount
     /// <summary>Auth0 subject claim (e.g. "auth0|abc123")</summary>
     public required string Auth0Sub { get; set; }
 
-    public required string DisplayName { get; set; }
+    public required string FirstName { get; set; }
+
+    public required string LastName { get; set; }
 
     public DateOnly? DateOfBirth { get; set; }
 

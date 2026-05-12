@@ -1,13 +1,14 @@
 import { useState, type FormEvent } from 'react'
 
 interface OnboardingFormProps {
-  onSubmit: (displayName: string, dateOfBirth: string, bio: string) => Promise<void>
+  onSubmit: (firstName: string, lastName: string, dateOfBirth: string, bio: string) => Promise<void>
 }
 
 type Step = 1 | 2 | 3
 
 interface WizardData {
-  displayName: string
+  firstName: string
+  lastName: string
   dateOfBirth: string
   bio: string
 }
@@ -26,12 +27,12 @@ const STEP_SUBTITLES: Record<Step, string> = {
 
 export function OnboardingForm({ onSubmit }: OnboardingFormProps) {
   const [step, setStep] = useState<Step>(1)
-  const [data, setData] = useState<WizardData>({ displayName: '', dateOfBirth: '', bio: '' })
+  const [data, setData] = useState<WizardData>({ firstName: '', lastName: '', dateOfBirth: '', bio: '' })
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const canAdvance =
-    step === 1 ? data.displayName.trim().length > 0 :
+    step === 1 ? data.firstName.trim().length > 0 && data.lastName.trim().length > 0 :
     step === 2 ? data.dateOfBirth.length > 0 :
     true
 
@@ -50,7 +51,7 @@ export function OnboardingForm({ onSubmit }: OnboardingFormProps) {
     setSubmitting(true)
     setError(null)
     try {
-      await onSubmit(data.displayName.trim(), data.dateOfBirth, data.bio.trim())
+      await onSubmit(data.firstName.trim(), data.lastName.trim(), data.dateOfBirth, data.bio.trim())
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
       setSubmitting(false)
@@ -102,24 +103,43 @@ export function OnboardingForm({ onSubmit }: OnboardingFormProps) {
 
             <form onSubmit={step < 3 ? handleNext : handleSubmit} noValidate style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               {step === 1 && (
-                <div className="form-field">
-                  <label htmlFor="displayName" className="form-label">
-                    Display name <span aria-hidden="true" style={{ color: 'var(--error-border)' }}>*</span>
-                  </label>
-                  <input
-                    id="displayName"
-                    type="text"
-                    className="form-input"
-                    value={data.displayName}
-                    onChange={e => setData(d => ({ ...d, displayName: e.target.value }))}
-                    maxLength={100}
-                    required
-                    autoFocus
-                    autoComplete="nickname"
-                    placeholder="How should we call you?"
-                    aria-required="true"
-                  />
-                </div>
+                <>
+                  <div className="form-field">
+                    <label htmlFor="firstName" className="form-label">
+                      First name <span aria-hidden="true" style={{ color: 'var(--error-border)' }}>*</span>
+                    </label>
+                    <input
+                      id="firstName"
+                      type="text"
+                      className="form-input"
+                      value={data.firstName}
+                      onChange={e => setData(d => ({ ...d, firstName: e.target.value }))}
+                      maxLength={100}
+                      required
+                      autoFocus
+                      autoComplete="given-name"
+                      placeholder="First name"
+                      aria-required="true"
+                    />
+                  </div>
+                  <div className="form-field">
+                    <label htmlFor="lastName" className="form-label">
+                      Last name <span aria-hidden="true" style={{ color: 'var(--error-border)' }}>*</span>
+                    </label>
+                    <input
+                      id="lastName"
+                      type="text"
+                      className="form-input"
+                      value={data.lastName}
+                      onChange={e => setData(d => ({ ...d, lastName: e.target.value }))}
+                      maxLength={100}
+                      required
+                      autoComplete="family-name"
+                      placeholder="Last name"
+                      aria-required="true"
+                    />
+                  </div>
+                </>
               )}
 
               {step === 2 && (

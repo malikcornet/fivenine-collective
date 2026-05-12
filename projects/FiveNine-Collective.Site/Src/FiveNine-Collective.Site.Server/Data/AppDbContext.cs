@@ -13,7 +13,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.HasKey(u => u.Id);
             e.HasIndex(u => u.Auth0Sub).IsUnique();
             e.Property(u => u.Auth0Sub).HasMaxLength(128);
-            e.Property(u => u.DisplayName).HasMaxLength(100);
+            e.Property(u => u.FirstName).HasMaxLength(100);
+            e.Property(u => u.LastName).HasMaxLength(100);
             e.Property(u => u.Bio).HasMaxLength(500);
         });
     }
