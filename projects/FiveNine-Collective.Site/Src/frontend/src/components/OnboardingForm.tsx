@@ -20,7 +20,7 @@ const STEP_TITLES: Record<Step, string> = {
 }
 
 const STEP_SUBTITLES: Record<Step, string> = {
-  1: 'This is how you'll appear to others.',
+  1: "This is how you'll appear to others.",
   2: 'Your date of birth is kept private.',
   3: 'A short intro is optional but helps others get to know you.',
 }
