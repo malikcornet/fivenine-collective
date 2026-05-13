@@ -11,9 +11,17 @@ public class UserAccount
 
     public required string LastName { get; set; }
 
+    public string? DisplayName { get; set; }
+
     public DateOnly? DateOfBirth { get; set; }
 
     public string? Bio { get; set; }
+
+    public string? WebsiteUrl { get; set; }
+
+    public string? PageHtml { get; set; }
+
+    public List<string> Tags { get; set; } = [];
 
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 }

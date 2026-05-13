@@ -1,4 +1,3 @@
-﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -6,15 +5,15 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace FiveNineCollective.Site.Server.Migrations
 {
     /// <inheritdoc />
-    public partial class AddDateOfBirth : Migration
+    public partial class AddPageHtml : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<DateOnly>(
-                name: "DateOfBirth",
+            migrationBuilder.AddColumn<string>(
+                name: "PageHtml",
                 table: "UserAccounts",
-                type: "date",
+                type: "text",
                 nullable: true);
         }
 
@@ -22,7 +21,7 @@ namespace FiveNineCollective.Site.Server.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "DateOfBirth",
+                name: "PageHtml",
                 table: "UserAccounts");
         }
     }

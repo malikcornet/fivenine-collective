@@ -1,32 +1,21 @@
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap');
+
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
-  color-scheme: light dark;
-
+  color-scheme: dark;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Reset and base styles */
-*,
-*::before,
-*::after {
+*, *::before, *::after {
   box-sizing: border-box;
 }
 
-html {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-  overflow-x: hidden;
-}
-
-body {
+html, body {
   margin: 0;
   padding: 0;
   width: 100%;
@@ -34,22 +23,16 @@ body {
   overflow-x: hidden;
 }
 
-/* Remove default Vite styles that conflict with our design */
-h1 {
-  margin: 0;
-}
-
-button {
-  font-family: inherit;
-  cursor: pointer;
-}
+h1, h2, h3, h4, h5, h6 { margin: 0; }
+p { margin: 0; }
+button { font-family: inherit; cursor: pointer; }
+a { text-decoration: none; color: inherit; }
+img { display: block; max-width: 100%; }
+ol, ul { margin: 0; padding: 0; list-style: none; }
 
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  *, *::before, *::after {
     animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 }

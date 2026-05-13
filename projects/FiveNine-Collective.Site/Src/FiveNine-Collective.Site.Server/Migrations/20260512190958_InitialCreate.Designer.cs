@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FiveNineCollective.Site.Server.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260512070102_InitialCreate")]
+    [Migration("20260512190958_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -45,7 +45,18 @@ namespace FiveNineCollective.Site.Server.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateOnly?>("DateOfBirth")
+                        .HasColumnType("date");
+
                     b.Property<string>("DisplayName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("LastName")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
