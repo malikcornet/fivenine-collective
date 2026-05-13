@@ -1,10 +1,9 @@
-using FiveNine_Collective_Site_Server.Api;
 using FiveNine_Collective_Site_Server.Application;
 using FiveNine_Collective_Site_Server.Data;
 using FiveNine_Collective_Site_Server.Infrastructure.Auth;
-using FiveNine_Collective_Site_Server.Infrastructure.Html;
 using FiveNine_Collective_Site_Server.Infrastructure.Http;
 using FiveNine_Collective_Site_Server.Infrastructure.Startup;
+using FiveNine_Collective_Site_Server.Infrastructure.Storage;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,8 +14,8 @@ builder.Services.AddOpenApi();
 builder.Services.AddCorsFromConfig(builder.Configuration);
 builder.Services.AddAuth0(builder.Configuration);
 builder.AddNpgsqlDbContext<AppDbContext>("fiveninedb");
-builder.Services.AddSingleton(HtmlSanitizerFactory.Create());
-builder.Services.AddScoped<AccountService>();
+builder.Services.AddObjectStorage(builder.Configuration);
+builder.Services.AddScoped<StudioService>();
 
 var app = builder.Build();
 

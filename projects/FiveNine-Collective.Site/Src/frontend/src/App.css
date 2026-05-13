@@ -64,6 +64,17 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 0 var(--gutter);
+  transition:
+    background-color 0.2s ease-out,
+    border-color 0.2s ease-out,
+    backdrop-filter 0.2s ease-out;
+}
+
+body[data-studio-snap='on'] .navbar {
+  background: color-mix(in srgb, var(--bg, #0a0a0a) 72%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
 }
 
 .navbar-brand,
@@ -74,6 +85,186 @@ body {
   text-transform: uppercase;
   color: var(--text);
   transition: opacity 0.15s;
+}
+
+.navbar-studio-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.navbar-studio-caret {
+  font-size: 0.6rem;
+  line-height: 1;
+  opacity: 0.7;
+  transition: transform 0.15s ease-out;
+}
+
+.navbar-studio-caret[data-open] {
+  transform: rotate(180deg);
+}
+
+.navbar-menu {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.navbar-menu .navbar-studio-link {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text);
+  transition: opacity 0.15s;
+}
+
+.navbar-menu .navbar-studio-link:hover {
+  opacity: 0.7;
+}
+
+.navbar-menu-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+  padding: 0.35rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+  z-index: 200;
+}
+
+.navbar-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  font: inherit;
+  font-size: 0.75rem;
+  text-align: left;
+  color: var(--text);
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  padding: 0.5rem 0.65rem;
+  cursor: pointer;
+  transition: background-color 0.12s;
+}
+
+.navbar-menu-item:hover,
+.navbar-menu-item:focus-visible {
+  background: var(--surface-hover, rgba(255, 255, 255, 0.05));
+}
+
+.navbar-menu-hint {
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.navbar-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.navbar-breadcrumbs {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.navbar-crumb {
+  font: inherit;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.navbar-crumb-link {
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.navbar-crumb-link:hover {
+  color: var(--text);
+}
+
+.navbar-crumb-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.navbar-crumb-back-arrow {
+  display: inline-block;
+  font-size: 0.85rem;
+  line-height: 1;
+  animation: navbar-crumb-back-bounce 1.8s ease-in-out infinite;
+}
+
+@keyframes navbar-crumb-back-bounce {
+  0%,
+  60%,
+  100% {
+    transform: translateX(0);
+    opacity: 0.7;
+  }
+  30% {
+    transform: translateX(-5px);
+    opacity: 1;
+  }
+}
+
+.navbar-crumb-back:hover .navbar-crumb-back-arrow,
+.navbar-crumb-back:focus-visible .navbar-crumb-back-arrow {
+  animation-play-state: paused;
+  transform: translateX(-2px);
+  opacity: 1;
+  transition:
+    transform 0.15s ease-out,
+    opacity 0.15s ease-out;
+}
+
+.navbar-crumb-back:active .navbar-crumb-back-arrow {
+  transform: translateX(-5px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .navbar-crumb-back-arrow {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+.navbar-crumb-sep {
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+.navbar-crumb-current {
+  color: var(--text);
+  text-transform: none;
+  letter-spacing: 0.02em;
+  font-weight: 500;
 }
 
 .navbar-brand:hover,
@@ -101,13 +292,13 @@ body {
 /* ============================================================
    CLUSTER (bento grid POC)
    ============================================================ */
-.cluster-page--infinite {
+.studio-page--infinite {
   height: 100vh;
   display: flex;
   flex-direction: column;
 }
 
-.cluster-dock {
+.studio-dock {
   position: absolute;
   bottom: 56px;
   left: 12px;
@@ -125,14 +316,14 @@ body {
   z-index: 10;
 }
 
-.cluster-dock-divider {
+.studio-dock-divider {
   width: 100%;
   height: 1px;
   background: var(--border);
   margin: 4px 0;
 }
 
-.cluster-dock-btn {
+.studio-dock-btn {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -152,42 +343,42 @@ body {
     transform 0.1s;
 }
 
-.cluster-dock-btn:hover:not(:disabled) {
+.studio-dock-btn:hover:not(:disabled) {
   background: var(--surface-2);
   border-color: var(--border);
 }
 
-.cluster-dock-btn:active:not(:disabled) {
+.studio-dock-btn:active:not(:disabled) {
   transform: scale(0.95);
 }
 
-.cluster-dock-btn:disabled {
+.studio-dock-btn:disabled {
   opacity: 0.35;
   cursor: not-allowed;
 }
 
-.cluster-dock-btn.is-danger:hover:not(:disabled) {
+.studio-dock-btn.is-danger:hover:not(:disabled) {
   color: #ff6b6b;
   border-color: #ff6b6b33;
 }
 
-.cluster-dock-icon {
+.studio-dock-icon {
   font-size: 1.1rem;
   line-height: 1;
   font-weight: 500;
 }
 
-.cluster-dock-label {
+.studio-dock-label {
   font-size: 0.6rem;
   letter-spacing: 0.04em;
   color: var(--text-muted);
 }
 
-.cluster-dock-btn:hover:not(:disabled) .cluster-dock-label {
+.studio-dock-btn:hover:not(:disabled) .studio-dock-label {
   color: var(--text);
 }
 
-.cluster-viewport {
+.studio-viewport {
   flex: 1;
   position: relative;
   overflow: hidden;
@@ -196,7 +387,7 @@ body {
   user-select: none;
 }
 
-.cluster-canvas {
+.studio-canvas {
   position: absolute;
   top: 0;
   left: 0;
@@ -205,11 +396,11 @@ body {
   height: 0;
 }
 
-.cluster-canvas .cluster-widget {
+.studio-canvas .studio-widget {
   position: absolute;
 }
 
-.cluster-hud {
+.studio-hud {
   position: absolute;
   bottom: 12px;
   left: 12px;
@@ -225,11 +416,35 @@ body {
   pointer-events: none;
 }
 
-.cluster-hud-hint {
+.studio-hud-hint {
   letter-spacing: 0.04em;
 }
 
-.cluster-widget {
+.studio-bounds-fs {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font: inherit;
+  font-size: 1rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+  pointer-events: auto;
+  z-index: 1;
+}
+.studio-bounds-fs:hover {
+  background: var(--surface-hover, var(--surface));
+  border-color: var(--text-muted);
+}
+
+.studio-widget {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -242,20 +457,30 @@ body {
   overflow: hidden;
 }
 
-.cluster-widget:hover {
+.studio-widget:hover {
   border-color: #333;
 }
 
-.cluster-widget.is-selected {
+.studio-widget.is-selected {
   border-color: var(--accent);
   box-shadow: 0 0 0 1px var(--accent);
 }
 
-.cluster-widget:active {
+.studio-widget:active {
   cursor: grabbing;
 }
 
-.cluster-widget-resize {
+.studio-widget.is-readonly {
+  cursor: default;
+}
+.studio-widget.is-readonly:hover {
+  border-color: var(--border);
+}
+.studio-widget.is-readonly .studio-widget-resize {
+  display: none;
+}
+
+.studio-widget-resize {
   position: absolute;
   right: 0;
   bottom: 0;
@@ -276,11 +501,11 @@ body {
   opacity: 0.5;
 }
 
-.cluster-widget-resize:hover {
+.studio-widget-resize:hover {
   opacity: 1;
 }
 
-.cluster-identity {
+.studio-identity {
   position: absolute;
   display: flex;
   align-items: center;
@@ -289,19 +514,40 @@ body {
   color: var(--text);
 }
 
-.cluster-identity > span {
+.studio-identity > span {
   font-weight: 800;
   letter-spacing: -0.02em;
   line-height: 1;
   white-space: nowrap;
 }
 
-.cluster-bounds {
+.studio-bounds {
   position: absolute;
   pointer-events: none;
   border: 1.5px dashed var(--border);
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.015);
+  transition:
+    border-color 0.15s ease-out,
+    box-shadow 0.15s ease-out,
+    background-color 0.15s ease-out;
+}
+
+.studio-viewport[data-snap-state='snapping'] .studio-bounds {
+  border-style: solid;
+  border-color: var(--accent);
+  background-color: rgba(212, 255, 0, 0.06);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.studio-viewport[data-at-snap] .studio-widget {
+  cursor: default;
+  /* Let touches/clicks pass through to the viewport so 1-finger drag scrolls
+     the locked profile like a web page. */
+  pointer-events: none;
+}
+.studio-viewport[data-at-snap] .studio-widget-resize {
+  display: none;
 }
 
 .cw-body {
@@ -464,7 +710,7 @@ body {
   gap: 0;
 }
 
-.cluster-widget:has(.cw-project) {
+.studio-widget:has(.cw-project) {
   padding: 0;
   overflow: hidden;
 }
@@ -512,4 +758,111 @@ body {
   font-size: 0.75rem !important;
   color: var(--text-muted) !important;
   line-height: 1.35 !important;
+}
+
+/* ============================================================
+   RESPONSIVE — phones & small tablets
+   ============================================================ */
+@media (max-width: 768px) {
+  .studio-hud-hint {
+    display: none;
+  }
+
+  .studio-dock {
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+    left: 12px;
+    right: 12px;
+    flex-direction: row;
+    align-items: center;
+    gap: 2px;
+    padding: 6px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .studio-dock::-webkit-scrollbar {
+    display: none;
+  }
+
+  .studio-dock-divider {
+    width: 1px;
+    height: 28px;
+    margin: 0 4px;
+    flex: 0 0 auto;
+  }
+
+  .studio-dock-btn {
+    flex: 0 0 auto;
+    width: 52px;
+    min-height: 44px;
+    padding: 6px 4px;
+  }
+
+  .studio-dock-label {
+    font-size: 0.55rem;
+  }
+
+  /* HUD moves above the bottom dock so they don't overlap. */
+  .studio-hud {
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 76px);
+    left: 12px;
+    right: auto;
+    font-size: 0.65rem;
+    padding: 0.3rem 0.5rem;
+  }
+
+}
+
+@media (max-width: 480px) {
+  :root {
+    --nav-h: 52px;
+    --gutter: 16px;
+  }
+
+  .navbar-brand,
+  .navbar-studio-link,
+  .navbar-signin-btn {
+    font-size: 0.68rem;
+  }
+
+  .navbar-signin-btn {
+    padding: 0.45rem 0.85rem;
+    min-height: 36px;
+  }
+
+  .studio-dock-btn {
+    width: 48px;
+  }
+
+  .studio-widget {
+    padding: 0.75rem;
+    border-radius: 8px;
+  }
+
+  .cw-profile {
+    gap: 0.6rem;
+  }
+  .cw-profile-avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 0.9rem;
+  }
+  .cw-profile-name {
+    font-size: 0.9rem;
+  }
+}
+
+/* Coarse pointers (touch) — make resize handle harder to hit accidentally
+   and use larger tap targets even on bigger touch tablets. */
+@media (hover: none) and (pointer: coarse) {
+  .studio-widget-resize {
+    width: 22px;
+    height: 22px;
+    opacity: 0.7;
+  }
+
+  .studio-dock-btn {
+    min-height: 44px;
+  }
 }

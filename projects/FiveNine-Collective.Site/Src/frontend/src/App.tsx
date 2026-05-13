@@ -7,8 +7,8 @@ import { RequireAuth } from './components/RequireAuth'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { HomePage } from './pages/HomePage'
 
-const ClusterPage = lazy(() =>
-  import('./pages/ClusterPage').then(m => ({ default: m.ClusterPage })),
+const StudioPage = lazy(() =>
+  import('./features/studio/StudioPage').then(m => ({ default: m.StudioPage })),
 )
 
 function App() {
@@ -42,7 +42,7 @@ function App() {
               path="/studio"
               element={
                 <RequireAuth>
-                  <ClusterPage />
+                  <StudioPage />
                 </RequireAuth>
               }
             />
@@ -54,4 +54,5 @@ function App() {
   )
 }
 
+App.displayName = 'App'
 export default App

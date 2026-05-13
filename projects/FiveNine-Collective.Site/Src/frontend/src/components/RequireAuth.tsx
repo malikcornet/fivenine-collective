@@ -24,3 +24,4 @@ export function RequireAuth({ children }: Props) {
 
   return children
 }
+RequireAuth.displayName = 'RequireAuth'
