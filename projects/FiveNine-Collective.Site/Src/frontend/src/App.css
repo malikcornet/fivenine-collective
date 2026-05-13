@@ -2,24 +2,24 @@
    DESIGN TOKENS
    ============================================================ */
 :root {
-  --bg:          #0a0a0a;
-  --surface:     #131313;
-  --surface-2:   #1c1c1c;
-  --text:        #f0f0f0;
-  --text-muted:  #888;
-  --text-dim:    #444;
-  --accent:      #d4ff00;
-  --accent-fg:   #0a0a0a;
-  --border:      #222;
-  --border-sub:  #181818;
+  --bg: #0a0a0a;
+  --surface: #131313;
+  --surface-2: #1c1c1c;
+  --text: #f0f0f0;
+  --text-muted: #888;
+  --text-dim: #444;
+  --accent: #d4ff00;
+  --accent-fg: #0a0a0a;
+  --border: #222;
+  --border-sub: #181818;
 
   --font-display: 'Syne', sans-serif;
-  --font-body:    'Inter', sans-serif;
+  --font-body: 'Inter', sans-serif;
 
-  --nav-h:  60px;
+  --nav-h: 60px;
   --gutter: clamp(20px, 5vw, 80px);
-  --max-w:  1280px;
-  --r:      6px;
+  --max-w: 1280px;
+  --r: 6px;
 }
 
 /* ============================================================
@@ -77,7 +77,9 @@ body {
 }
 
 .navbar-brand:hover,
-.navbar-studio-link:hover { opacity: 0.7; }
+.navbar-studio-link:hover {
+  opacity: 0.7;
+}
 
 .navbar-signin-btn {
   font-size: 0.72rem;
@@ -92,7 +94,9 @@ body {
   transition: opacity 0.15s;
 }
 
-.navbar-signin-btn:hover { opacity: 0.85; }
+.navbar-signin-btn:hover {
+  opacity: 0.85;
+}
 
 /* ============================================================
    CLUSTER (bento grid POC)
@@ -141,7 +145,11 @@ body {
   border-radius: 8px;
   color: var(--text);
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s,
+    transform 0.1s;
 }
 
 .cluster-dock-btn:hover:not(:disabled) {
@@ -228,7 +236,9 @@ body {
   padding: 1rem;
   position: relative;
   cursor: grab;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
   overflow: hidden;
 }
 
@@ -252,12 +262,39 @@ body {
   width: 16px;
   height: 16px;
   cursor: nwse-resize;
-  background:
-    linear-gradient(135deg, transparent 50%, var(--text-muted) 50%, var(--text-muted) 60%, transparent 60%, transparent 70%, var(--text-muted) 70%, var(--text-muted) 80%, transparent 80%);
+  background: linear-gradient(
+    135deg,
+    transparent 50%,
+    var(--text-muted) 50%,
+    var(--text-muted) 60%,
+    transparent 60%,
+    transparent 70%,
+    var(--text-muted) 70%,
+    var(--text-muted) 80%,
+    transparent 80%
+  );
   opacity: 0.5;
 }
 
-.cluster-widget-resize:hover { opacity: 1; }
+.cluster-widget-resize:hover {
+  opacity: 1;
+}
+
+.cluster-identity {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  color: var(--text);
+}
+
+.cluster-identity > span {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  white-space: nowrap;
+}
 
 .cluster-bounds {
   position: absolute;

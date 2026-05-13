@@ -3,18 +3,76 @@ export const CELL_H = 64
 export const GAP = 12
 export const STEP_X = CELL_W + GAP
 export const STEP_Y = CELL_H + GAP
+export const NAV_H = 60
+export const BOUNDS_PADDING_CELLS = 1
 
-export type WidgetType = 'profile' | 'about' | 'links' | 'gallery' | 'text' | 'socials' | 'video' | 'project'
+export type WidgetType = Widget['type']
 
-export interface Widget {
+interface WidgetBase {
   id: string
-  type: WidgetType
   col: number
   row: number
   w: number
   h: number
-  data: Record<string, unknown>
 }
+
+export interface ProfileWidget extends WidgetBase {
+  type: 'profile'
+  data: { name: string; role: string; bio: string }
+}
+
+export interface AboutWidget extends WidgetBase {
+  type: 'about'
+  data: { title: string; body: string }
+}
+
+export interface TextWidget extends WidgetBase {
+  type: 'text'
+  data: { body: string }
+}
+
+export interface LinksWidget extends WidgetBase {
+  type: 'links'
+  data: { items: string[] }
+}
+
+export interface GalleryWidget extends WidgetBase {
+  type: 'gallery'
+  data: { count: number }
+}
+
+export interface SocialsWidget extends WidgetBase {
+  type: 'socials'
+  data: { items: string[] }
+}
+
+export interface VideoWidget extends WidgetBase {
+  type: 'video'
+  data: { title: string }
+}
+
+export interface ProjectWidget extends WidgetBase {
+  type: 'project'
+  data: {
+    title: string
+    status: string
+    year: string
+    blurb: string
+    accent: string
+  }
+}
+
+export type Widget =
+  | ProfileWidget
+  | AboutWidget
+  | TextWidget
+  | LinksWidget
+  | GalleryWidget
+  | SocialsWidget
+  | VideoWidget
+  | ProjectWidget
+
+export type WidgetData<T extends WidgetType> = Extract<Widget, { type: T }>['data']
 
 export type DragState =
   | { kind: 'move'; id: string; startX: number; startY: number; origCol: number; origRow: number }
@@ -22,14 +80,22 @@ export type DragState =
   | { kind: 'pan'; startX: number; startY: number; origPanX: number; origPanY: number }
   | null
 
-let idCounter = 100
-export const nextId = () => `w${++idCounter}`
+export const nextId = () => crypto.randomUUID()
 
-export const BOUNDS_PADDING_CELLS = 1
+/**
+ * IDs for client-minted widgets that haven't been persisted yet.
+ * The server returns canonical IDs on save and the client reconciles by
+ * matching the `draft-` prefix.
+ */
+export const nextDraftId = () => `draft-${crypto.randomUUID()}`
+export const isDraftId = (id: string) => id.startsWith('draft-')
 
 export function getClusterBounds(widgets: Widget[]) {
   if (widgets.length === 0) return null
-  let minCol = Infinity, minRow = Infinity, maxCol = -Infinity, maxRow = -Infinity
+  let minCol = Infinity,
+    minRow = Infinity,
+    maxCol = -Infinity,
+    maxRow = -Infinity
   for (const w of widgets) {
     if (w.col < minCol) minCol = w.col
     if (w.row < minRow) minRow = w.row
@@ -43,21 +109,25 @@ export function getClusterBounds(widgets: Widget[]) {
   return { left, top, width, height, centerX: left + width / 2, centerY: top + height / 2 }
 }
 
-export function defaultData(type: WidgetType): Record<string, unknown> {
-  switch (type) {
-    case 'profile': return { name: 'Your name', role: 'Role · Location', bio: 'One-line bio.' }
-    case 'about': return { title: 'About', body: 'Tell people who you are.' }
-    case 'text': return { body: 'A quote, a thought, a manifesto.' }
-    case 'links': return { items: ['Link one', 'Link two'] }
-    case 'gallery': return { count: 3 }
-    case 'socials': return { items: ['IG', 'YT', 'SC'] }
-    case 'video': return { title: 'Video' }
-    case 'project': return {
-      title: 'Untitled project',
-      status: 'In progress',
-      year: '2026',
-      blurb: 'What this project is about.',
-      accent: '#d4ff00',
-    }
-  }
+type DefaultDataMap = { [T in WidgetType]: WidgetData<T> }
+
+const DEFAULT_DATA: DefaultDataMap = {
+  profile: { name: 'Your name', role: 'Role · Location', bio: 'One-line bio.' },
+  about: { title: 'About', body: 'Tell people who you are.' },
+  text: { body: 'A quote, a thought, a manifesto.' },
+  links: { items: ['Link one', 'Link two'] },
+  gallery: { count: 3 },
+  socials: { items: ['IG', 'YT', 'SC'] },
+  video: { title: 'Video' },
+  project: {
+    title: 'Untitled project',
+    status: 'In progress',
+    year: '2026',
+    blurb: 'What this project is about.',
+    accent: '#d4ff00',
+  },
+}
+
+export function defaultData<T extends WidgetType>(type: T): WidgetData<T> {
+  return DEFAULT_DATA[type] as WidgetData<T>
 }

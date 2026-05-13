@@ -9,13 +9,13 @@ interface Props {
 
 export function ClusterDock({ canDelete, onAdd, onDelete, onRecenter }: Props) {
   return (
-    <div className="cluster-dock" onPointerDown={(e) => e.stopPropagation()}>
-      <DockButton label="About"   icon="i" onClick={() => onAdd('about')} />
-      <DockButton label="Text"    icon="T" onClick={() => onAdd('text')} />
-      <DockButton label="Links"   icon="↗" onClick={() => onAdd('links')} />
+    <div className="cluster-dock" onPointerDown={e => e.stopPropagation()}>
+      <DockButton label="About" icon="i" onClick={() => onAdd('about')} />
+      <DockButton label="Text" icon="T" onClick={() => onAdd('text')} />
+      <DockButton label="Links" icon="↗" onClick={() => onAdd('links')} />
       <DockButton label="Gallery" icon="▦" onClick={() => onAdd('gallery')} />
       <DockButton label="Socials" icon="@" onClick={() => onAdd('socials')} />
-      <DockButton label="Video"   icon="▶" onClick={() => onAdd('video')} />
+      <DockButton label="Video" icon="▶" onClick={() => onAdd('video')} />
       <DockButton label="Project" icon="◆" onClick={() => onAdd('project')} />
       <div className="cluster-dock-divider" />
       <DockButton label="Delete" icon="✕" onClick={onDelete} disabled={!canDelete} danger />
@@ -25,7 +25,11 @@ export function ClusterDock({ canDelete, onAdd, onDelete, onRecenter }: Props) {
 }
 
 function DockButton({
-  label, icon, onClick, disabled, danger,
+  label,
+  icon,
+  onClick,
+  disabled,
+  danger,
 }: {
   label: string
   icon: string

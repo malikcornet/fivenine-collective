@@ -1,9 +1,15 @@
+import { lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth0 } from '@auth0/auth0-react'
 import './App.css'
 import { NavBar } from './components/NavBar'
+import { RequireAuth } from './components/RequireAuth'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { HomePage } from './pages/HomePage'
-import { ClusterPage } from './pages/ClusterPage'
+
+const ClusterPage = lazy(() =>
+  import('./pages/ClusterPage').then(m => ({ default: m.ClusterPage })),
+)
 
 function App() {
   const { isLoading: authLoading } = useAuth0()
@@ -22,11 +28,28 @@ function App() {
     <div className="app-container">
       <NavBar />
 
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/studio" element={<ClusterPage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <ErrorBoundary>
+        <Suspense
+          fallback={
+            <div className="app-loading" role="status" aria-live="polite">
+              <span>Loading…</span>
+            </div>
+          }
+        >
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route
+              path="/studio"
+              element={
+                <RequireAuth>
+                  <ClusterPage />
+                </RequireAuth>
+              }
+            />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
+      </ErrorBoundary>
     </div>
   )
 }

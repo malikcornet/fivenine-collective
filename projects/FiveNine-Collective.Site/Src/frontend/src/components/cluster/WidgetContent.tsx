@@ -3,15 +3,21 @@ import type { Widget } from './types'
 export function WidgetContent({ widget }: { widget: Widget }) {
   switch (widget.type) {
     case 'profile': {
-      const name = String(widget.data.name ?? '')
-      const initials = name.split(' ').map(p => p[0]).filter(Boolean).slice(0, 2).join('').toUpperCase()
+      const { name, role, bio } = widget.data
+      const initials = name
+        .split(' ')
+        .map(p => p[0])
+        .filter(Boolean)
+        .slice(0, 2)
+        .join('')
+        .toUpperCase()
       return (
         <div className="cw-body cw-profile">
           <div className="cw-profile-avatar">{initials || '?'}</div>
           <div className="cw-profile-meta">
             <div className="cw-profile-name">{name}</div>
-            <div className="cw-profile-role">{String(widget.data.role ?? '')}</div>
-            <p className="cw-profile-bio">{String(widget.data.bio ?? '')}</p>
+            <div className="cw-profile-role">{role}</div>
+            <p className="cw-profile-bio">{bio}</p>
           </div>
         </div>
       )
@@ -19,14 +25,14 @@ export function WidgetContent({ widget }: { widget: Widget }) {
     case 'about':
       return (
         <div className="cw-body">
-          <div className="cw-label">{String(widget.data.title)}</div>
-          <p>{String(widget.data.body)}</p>
+          <div className="cw-label">{widget.data.title}</div>
+          <p>{widget.data.body}</p>
         </div>
       )
     case 'text':
       return (
         <div className="cw-body cw-body--center">
-          <p className="cw-quote">{String(widget.data.body)}</p>
+          <p className="cw-quote">{widget.data.body}</p>
         </div>
       )
     case 'links':
@@ -34,8 +40,10 @@ export function WidgetContent({ widget }: { widget: Widget }) {
         <div className="cw-body">
           <div className="cw-label">Links</div>
           <ul className="cw-list">
-            {(widget.data.items as string[]).map((it, i) => (
-              <li key={i}>{it} <span>→</span></li>
+            {widget.data.items.map((it, i) => (
+              <li key={`${i}-${it}`}>
+                {it} <span>→</span>
+              </li>
             ))}
           </ul>
         </div>
@@ -45,7 +53,7 @@ export function WidgetContent({ widget }: { widget: Widget }) {
         <div className="cw-body">
           <div className="cw-label">Gallery</div>
           <div className="cw-gallery">
-            {Array.from({ length: (widget.data.count as number) || 3 }).map((_, i) => (
+            {Array.from({ length: widget.data.count }).map((_, i) => (
               <div key={i} className="cw-gallery-tile" />
             ))}
           </div>
@@ -56,8 +64,10 @@ export function WidgetContent({ widget }: { widget: Widget }) {
         <div className="cw-body">
           <div className="cw-label">Social</div>
           <div className="cw-socials">
-            {(widget.data.items as string[]).map((s, i) => (
-              <span key={i} className="cw-social-chip">{s}</span>
+            {widget.data.items.map((s, i) => (
+              <span key={`${i}-${s}`} className="cw-social-chip">
+                {s}
+              </span>
             ))}
           </div>
         </div>
@@ -69,17 +79,20 @@ export function WidgetContent({ widget }: { widget: Widget }) {
         </div>
       )
     case 'project': {
-      const accent = String(widget.data.accent ?? '#d4ff00')
+      const { accent, status, year, title, blurb } = widget.data
       return (
         <div className="cw-body cw-project">
-          <div className="cw-project-cover" style={{ background: `linear-gradient(135deg, ${accent}, ${accent}55)` }} />
+          <div
+            className="cw-project-cover"
+            style={{ background: `linear-gradient(135deg, ${accent}, ${accent}55)` }}
+          />
           <div className="cw-project-meta">
             <div className="cw-project-status">
               <span className="cw-project-dot" style={{ background: accent }} />
-              {String(widget.data.status ?? '')} · {String(widget.data.year ?? '')}
+              {status} · {year}
             </div>
-            <div className="cw-project-title">{String(widget.data.title ?? '')}</div>
-            <p className="cw-project-blurb">{String(widget.data.blurb ?? '')}</p>
+            <div className="cw-project-title">{title}</div>
+            <p className="cw-project-blurb">{blurb}</p>
           </div>
         </div>
       )

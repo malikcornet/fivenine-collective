@@ -6,7 +6,7 @@ export function NavBar() {
 
   return (
     <nav className="navbar" aria-label="Main navigation">
-      <Link to="/" className="navbar-brand" aria-label="Home">
+      <Link to="/" className="navbar-brand">
         FiveNine
       </Link>
 
@@ -15,11 +15,7 @@ export function NavBar() {
           Studio
         </Link>
       ) : (
-        <button
-          type="button"
-          className="navbar-signin-btn"
-          onClick={() => loginWithRedirect()}
-        >
+        <button type="button" className="navbar-signin-btn" onClick={() => loginWithRedirect()}>
           Sign In
         </button>
       )}

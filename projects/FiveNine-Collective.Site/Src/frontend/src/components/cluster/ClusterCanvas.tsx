@@ -1,7 +1,8 @@
-import { useEffect, type RefObject } from 'react'
+import type { RefObject } from 'react'
 import { ClusterBounds } from './ClusterBounds'
-import { ClusterIdentity, identityOpacity } from './ClusterIdentity'
+import { ClusterIdentity } from './ClusterIdentity'
 import { ClusterWidget } from './ClusterWidget'
+import { identityOpacity } from './math'
 import { STEP_X, STEP_Y, type DragState, type Widget } from './types'
 
 interface Props {
@@ -17,34 +18,28 @@ interface Props {
   onWidgetPointerDown: (e: React.PointerEvent, w: Widget) => void
   onResizePointerDown: (e: React.PointerEvent, w: Widget) => void
   onSelect: (id: string) => void
-  onZoom: (factor: number, mouseX: number, mouseY: number) => void
   children?: React.ReactNode
 }
 
 export function ClusterCanvas({
-  viewportRef, widgets, selectedId, pan, zoom, drag,
-  onViewportPointerDown, onPointerMove, onPointerUp,
-  onWidgetPointerDown, onResizePointerDown, onSelect,
-  onZoom, children,
+  viewportRef,
+  widgets,
+  selectedId,
+  pan,
+  zoom,
+  drag,
+  onViewportPointerDown,
+  onPointerMove,
+  onPointerUp,
+  onWidgetPointerDown,
+  onResizePointerDown,
+  onSelect,
+  children,
 }: Props) {
-  useEffect(() => {
-    const el = viewportRef.current
-    if (!el) return
-    const onWheel = (e: WheelEvent) => {
-      e.preventDefault()
-      const rect = el.getBoundingClientRect()
-      const mx = e.clientX - rect.left
-      const my = e.clientY - rect.top
-      const factor = e.deltaY < 0 ? 1.1 : 0.9
-      onZoom(factor, mx, my)
-    }
-    el.addEventListener('wheel', onWheel, { passive: false })
-    return () => el.removeEventListener('wheel', onWheel)
-  }, [onZoom, viewportRef])
-
   const bgSize = STEP_X * zoom
   const bgSizeY = STEP_Y * zoom
   const dotAlpha = Math.min(1, zoom * zoom)
+  const identityFill = identityOpacity(zoom)
 
   return (
     <div
@@ -69,8 +64,8 @@ export function ClusterCanvas({
         <ClusterIdentity widgets={widgets} zoom={zoom} />
         <div
           style={{
-            opacity: 1 - identityOpacity(zoom),
-            pointerEvents: identityOpacity(zoom) === 1 ? 'none' : undefined,
+            opacity: 1 - identityFill,
+            pointerEvents: identityFill === 1 ? 'none' : undefined,
           }}
         >
           {widgets.map(w => (
