@@ -4,15 +4,29 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-// One-shot migrator. Resolves the same "fiveninedb" connection string as the
-// server (via AddNpgsqlDbContext + ServiceDiscovery / env vars), applies all
-// pending EF Core migrations, and exits with code 0 on success or non-zero on
-// failure so the orchestrator (Aspire AppHost locally, Railway pre-deploy
-// remotely) can fail the deploy.
+// One-shot DB CLI. Two modes, selected by argv:
 //
-// Note: deliberately does NOT call AddServiceDefaults — OpenTelemetry,
-// resilience handlers, and health checks add startup overhead that's wasted
-// on a sub-second process.
+//   (no args)                       — apply pending EF Core migrations and exit
+//   --seed-only --confirm-wipe      — wipe CanvasItems (cascades to Widgets)
+//                                     and insert the FiveNine demo project.
+//                                     Both flags required so a stray
+//                                     `dotnet run -- --seed-only` can't
+//                                     destroy data on its own.
+//
+// Both modes resolve the same "fiveninedb" connection string the server uses
+// (via AddNpgsqlDbContext + ServiceDiscovery / env vars). Exit code 0 on
+// success, non-zero on failure so the orchestrator can fail the deploy.
+
+var seedOnly = args.Contains("--seed-only");
+var confirmWipe = args.Contains("--confirm-wipe");
+
+if (seedOnly && !confirmWipe)
+{
+    Console.Error.WriteLine(
+        "--seed-only is destructive (truncates CanvasItems). " +
+        "Pass --confirm-wipe to acknowledge and proceed.");
+    return 2;
+}
 
 var builder = Host.CreateApplicationBuilder(args);
 builder.AddNpgsqlDbContext<AppDbContext>("fiveninedb");
@@ -25,13 +39,23 @@ var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
 try
 {
-    logger.LogInformation("Applying EF Core migrations…");
-    await db.Database.MigrateAsync();
-    logger.LogInformation("Migrations complete.");
+    if (seedOnly)
+    {
+        logger.LogInformation("Seeder running (--seed-only --confirm-wipe).");
+        await Seeder.SeedDemoDataAsync(db, logger);
+        logger.LogInformation("Seed complete.");
+    }
+    else
+    {
+        logger.LogInformation("Applying EF Core migrations…");
+        await db.Database.MigrateAsync();
+        logger.LogInformation("Migrations complete.");
+    }
+
     return 0;
 }
 catch (Exception ex)
 {
-    logger.LogCritical(ex, "Migration failed");
+    logger.LogCritical(ex, "{Mode} failed", seedOnly ? "Seeder" : "Migrator");
     return 1;
 }

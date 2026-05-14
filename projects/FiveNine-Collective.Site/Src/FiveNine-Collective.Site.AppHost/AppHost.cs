@@ -20,6 +20,17 @@ var migrator = builder.AddProject<Projects.FiveNine_Collective_Site_Migrations>(
     .WithReference(db)
     .WaitFor(db);
 
+// Optional seeder. Same binary as the migrator with `--seed-only`; nested
+// under it in the dashboard via WithParentRelationship and not auto-started
+// (WithExplicitStart) — click "Start" on the dashboard to insert the demo
+// project. Idempotent: re-running is a no-op once any project exists.
+builder.AddProject<Projects.FiveNine_Collective_Site_Migrations>("seeder")
+    .WithReference(db)
+    .WithArgs("--seed-only", "--confirm-wipe")
+    .WaitForCompletion(migrator)
+    .WithParentRelationship(migrator)
+    .WithExplicitStart();
+
 var server = builder.AddProject<Projects.FiveNine_Collective_Site_Server>("server")
     .WithReference(db)
     .WaitForCompletion(migrator)

@@ -10,7 +10,7 @@ dockerfilePath = "Dockerfile"
 [deploy]
 # Runs once per deployment, before the new revision is promoted. Sees the
 # same env (DATABASE_URL etc.) as the runtime service.
-preDeployCommand = ["dotnet", "/app/migrator/FiveNine-Collective.Site.Migrations.dll"]
+preDeployCommand = "dotnet /app/migrator/FiveNine-Collective.Site.Migrations.dll"
 
 # Standard restart-on-failure for the server itself.
 restartPolicyType = "ON_FAILURE"

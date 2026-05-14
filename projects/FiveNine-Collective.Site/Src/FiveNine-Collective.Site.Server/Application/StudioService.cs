@@ -35,8 +35,8 @@ public sealed class StudioService(AppDbContext db)
 
     /// <summary>
     /// Returns the full studio snapshot. When <paramref name="sub"/> is non-null,
-    /// the caller's profile is auto-created on first load. Also seeds a default
-    /// shared project on first call so the canvas isn't empty.
+    /// the caller's profile is auto-created on first load. Demo/reference data
+    /// (e.g. the FiveNine sample project) is seeded by the migrator, not here.
     /// </summary>
     public async Task<StudioDto> GetStudioAsync(string? sub, CancellationToken ct = default)
     {
@@ -47,8 +47,6 @@ public sealed class StudioService(AppDbContext db)
             existing ??= await CreateProfileWithDefaultsAsync(sub, ct);
             currentProfileId = existing.Id;
         }
-
-        await EnsureDefaultProjectAsync(ct);
 
         var items = await db.CanvasItems.AsNoTracking().ToListAsync(ct);
         var widgets = await db.Widgets.AsNoTracking().ToListAsync(ct);
@@ -328,34 +326,6 @@ public sealed class StudioService(AppDbContext db)
         db.Profiles.Add(profile);
         await db.SaveChangesAsync(ct);
         return profile;
-    }
-
-    /// <summary>Seeds a single demo project the first time the studio is
-    /// loaded so the new container kind has something to render. Anchored
-    /// far enough to the right that it doesn't overlap profile slots.</summary>
-    private async Task EnsureDefaultProjectAsync(CancellationToken ct)
-    {
-        if (await db.Projects.AnyAsync(ct)) return;
-
-        // Anchor projects well to the right of the profile slots.
-        const int projectColOffset = 200;
-
-        var project = new ProjectItem
-        {
-            Auth0Sub = "system",
-            Name = "FiveNine Project",
-            Description = "A shared workspace where collaborators drop ideas, references, and drafts together.",
-            CollaboratorSubs = [],
-            Widgets =
-            [
-                MakeWidget("text", projectColOffset, 0, 6, 3, new { body = "Welcome to the first FiveNine project." }),
-                MakeWidget("picture", projectColOffset + 6, 0, 4, 4, new { url = (string?)null, caption = "Mood board" }),
-                MakeWidget("video", projectColOffset, 3, 5, 3, new { url = (string?)null, title = "Pitch reel" }),
-            ],
-        };
-
-        db.Projects.Add(project);
-        await db.SaveChangesAsync(ct);
     }
 
     private static Widget MakeWidget(string type, int col, int row, int w, int h, object data) => new()
