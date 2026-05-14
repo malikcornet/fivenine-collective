@@ -13,9 +13,16 @@ var storage = builder.AddMinioContainer("storage", storageUser, storagePassword)
     .WithLifetime(ContainerLifetime.Persistent)
     .WithDataVolume();
 
+// One-shot migrator. Runs to completion before the server starts so the
+// schema is always current when traffic hits the API. Same lifecycle on
+// Railway is enforced via the preDeployCommand.
+var migrator = builder.AddProject<Projects.FiveNine_Collective_Site_Migrations>("migrator")
+    .WithReference(db)
+    .WaitFor(db);
+
 var server = builder.AddProject<Projects.FiveNine_Collective_Site_Server>("server")
     .WithReference(db)
-    .WaitFor(db)
+    .WaitForCompletion(migrator)
     .WithReference(storage)
     .WaitFor(storage)
     .WithHttpHealthCheck("/health")

@@ -17,6 +17,21 @@ public static class AuthExtensions
             {
                 options.Authority = $"https://{configuration["Auth0:Domain"]}/";
                 options.Audience = configuration["Auth0:Audience"];
+                // WebSockets can't set Authorization headers, so SignalR clients
+                // pass the access token as a query string on hub paths.
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = ctx =>
+                    {
+                        var token = ctx.Request.Query["access_token"];
+                        if (!string.IsNullOrEmpty(token) &&
+                            ctx.HttpContext.Request.Path.StartsWithSegments("/hubs"))
+                        {
+                            ctx.Token = token;
+                        }
+                        return Task.CompletedTask;
+                    },
+                };
             });
 
         services.AddAuthorization();

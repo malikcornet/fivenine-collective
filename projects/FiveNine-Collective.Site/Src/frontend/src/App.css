@@ -296,6 +296,7 @@ body[data-studio-snap='on'] .navbar {
   height: 100vh;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
 .studio-dock {
@@ -508,17 +509,343 @@ body[data-studio-snap='on'] .navbar {
 .studio-identity {
   position: absolute;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: stretch;
+  justify-content: stretch;
   pointer-events: none;
   color: var(--text);
+  opacity: 1;
+  transform: scale(1);
+  transform-origin: 50% 50%;
+  transition:
+    opacity 240ms ease,
+    transform 320ms cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  will-change: opacity, transform;
 }
 
-.studio-identity > span {
+.studio-identity[data-hidden] {
+  opacity: 0;
+  transform: scale(0.94);
+}
+
+.studio-widgets-layer {
+  transition: opacity 240ms ease;
+  will-change: opacity;
+}
+
+.studio-profile-card {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--surface, #141414) 96%, transparent) 0%,
+    color-mix(in srgb, var(--surface, #0e0e0e) 92%, transparent) 100%
+  );
+  border: 1px solid var(--border, #2a2a2a);
+  box-shadow:
+    0 30px 70px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  overflow: hidden;
+}
+
+.studio-profile-card__lanyard {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.55);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.8);
+  z-index: 2;
+}
+
+.studio-profile-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(135deg, var(--accent, #d4ff00) 0%, #8fbb00 100%);
+  color: #0a0a0a;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.studio-profile-card__badge-label {
+  font-weight: 800;
+}
+
+.studio-profile-card__badge-id {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.12em;
+  opacity: 0.75;
+}
+
+.studio-profile-card__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.studio-profile-card__avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #0a0a0a;
+  background: linear-gradient(135deg, #ffffff 0%, #c8c8c8 100%);
+  border-style: solid;
+  border-color: var(--surface, #141414);
+  box-shadow:
+    0 6px 18px rgba(0, 0, 0, 0.5),
+    0 0 0 2px var(--accent, #d4ff00);
+}
+
+.studio-profile-card__name {
   font-weight: 800;
   letter-spacing: -0.02em;
+  line-height: 1.05;
+  color: var(--text, #f5f5f5);
+}
+
+.studio-profile-card__handle {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.02em;
+  color: var(--text-muted, #9a9a9a);
+  margin-top: 0.1em;
+}
+
+.studio-profile-card__role-chip {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent, #d4ff00);
+  background: color-mix(in srgb, var(--accent, #d4ff00) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent, #d4ff00) 35%, transparent);
+}
+
+.studio-profile-card__bio {
+  max-width: 88%;
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--text-muted, #b0b0b0);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.studio-profile-card__stats {
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  width: 100%;
+  border-top: 1px solid color-mix(in srgb, var(--border, #2a2a2a) 80%, transparent);
+  padding-top: 0.6em;
+}
+
+.studio-profile-card__stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2em;
+}
+
+.studio-profile-card__stat-value {
+  font-weight: 800;
+  letter-spacing: -0.01em;
   line-height: 1;
-  white-space: nowrap;
+  color: var(--text, #f5f5f5);
+}
+
+.studio-profile-card__stat-label {
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-muted, #8a8a8a);
+}
+
+.studio-profile-card__barcode {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.25em;
+  flex-shrink: 0;
+}
+
+.studio-profile-card__barcode-bars {
+  width: 100%;
+  flex: 1;
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--text, #f5f5f5) 0 1px,
+    transparent 1px 3px,
+    var(--text, #f5f5f5) 3px 5px,
+    transparent 5px 8px,
+    var(--text, #f5f5f5) 8px 10px,
+    transparent 10px 14px
+  );
+  opacity: 0.85;
+}
+
+.studio-profile-card__barcode-text {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.2em;
+  color: var(--text-muted, #8a8a8a);
+}
+
+/* ===== ProjectCard ===== */
+.studio-project-card {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--surface, #141414) 94%, transparent) 0%,
+    color-mix(in srgb, var(--surface, #0e0e0e) 88%, transparent) 100%
+  );
+  border: 1px solid var(--border, #2a2a2a);
+  box-shadow:
+    0 30px 70px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  overflow: hidden;
+}
+
+.studio-project-card__stripe {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(
+    90deg,
+    var(--project-accent, #5b8cff) 0%,
+    color-mix(in srgb, var(--project-accent, #5b8cff) 50%, #000) 100%
+  );
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.studio-project-card__kind,
+.studio-project-card__count {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.12em;
+  opacity: 0.92;
+}
+
+.studio-project-card__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  position: relative;
+}
+
+.studio-project-card__title {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  color: var(--text, #f5f5f5);
+}
+
+.studio-project-card__description {
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--text-muted, #b0b0b0);
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.studio-project-card__divider {
+  height: 1px;
+  background: color-mix(in srgb, var(--border, #2a2a2a) 80%, transparent);
+  margin-block: 0.4em;
+}
+
+.studio-project-card__meta-row {
+  display: flex;
+  align-items: center;
+  gap: 0.8em;
+  margin-top: auto;
+}
+
+.studio-project-card__meta-label {
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted, #8a8a8a);
+}
+
+.studio-project-card__avatars {
+  display: flex;
+  align-items: center;
+}
+
+.studio-project-card__avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #fff;
+  background: linear-gradient(135deg,
+    var(--project-accent, #5b8cff) 0%,
+    color-mix(in srgb, var(--project-accent, #5b8cff) 40%, #000) 100%);
+  border: 2px solid var(--surface, #141414);
+  margin-left: -0.4em;
+}
+
+.studio-project-card__avatar:first-child {
+  margin-left: 0;
+}
+
+.studio-project-card__avatar--more {
+  background: var(--surface-2, #1a1a1a);
+  color: var(--text-muted, #b0b0b0);
+}
+
+.studio-project-card__empty {
+  font-style: italic;
+  color: var(--text-muted, #8a8a8a);
+}
+
+.studio-project-card__footer {
+  margin-top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid color-mix(in srgb, var(--border, #2a2a2a) 80%, transparent);
+  padding-top: 0.5em;
+  flex-shrink: 0;
+}
+
+.studio-project-card__footer-text {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.2em;
+  color: var(--text-muted, #8a8a8a);
+}
+
+.studio-project-card__footer-tag {
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--project-accent, #5b8cff);
 }
 
 .studio-bounds {
@@ -530,7 +857,9 @@ body[data-studio-snap='on'] .navbar {
   transition:
     border-color 0.15s ease-out,
     box-shadow 0.15s ease-out,
-    background-color 0.15s ease-out;
+    background-color 0.15s ease-out,
+    opacity 240ms ease;
+  will-change: opacity;
 }
 
 .studio-viewport[data-snap-state='snapping'] .studio-bounds {
@@ -555,6 +884,7 @@ body[data-studio-snap='on'] .navbar {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  position: relative;
 }
 
 .cw-body--center {
@@ -865,4 +1195,77 @@ body[data-studio-snap='on'] .navbar {
   .studio-dock-btn {
     min-height: 44px;
   }
+}
+
+.studio-peer-cursors {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.studio-peer-cursor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  will-change: transform;
+}
+
+.studio-peer-cursor__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ff5a5f;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9);
+}
+
+.studio-peer-cursor__label {
+  margin-top: -2px;
+  padding: 2px 6px;
+  font-size: 11px;
+  line-height: 1;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+/* Debug labels (toggle with ?debug=1). Pinned to the nearest positioned
+   ancestor — components that should be labelable need position: relative
+   on their root (or one is already there). */
+.debug-label {
+  position: absolute;
+  z-index: 99999;
+  padding: 2px 5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: #ff7eb6;
+  background: rgba(0, 0, 0, 0.82);
+  border: 1px solid rgba(255, 126, 182, 0.6);
+  border-radius: 3px;
+  pointer-events: none;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.debug-label--top-left {
+  top: 2px;
+  left: 2px;
+}
+
+.debug-label--bottom-right {
+  right: 2px;
+  bottom: 2px;
+}
+
+.debug-label--inline {
+  position: static;
+  display: inline-block;
+  margin: 2px;
 }

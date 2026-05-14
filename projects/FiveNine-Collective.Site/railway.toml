@@ -1,0 +1,17 @@
+# Railway deploy config. The Dockerfile produces an image with both the
+# server and a one-shot migrator binary. Pre-deploy runs the migrator against
+# the production DB; a non-zero exit aborts the deploy so we never serve
+# traffic against a stale schema.
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+# Runs once per deployment, before the new revision is promoted. Sees the
+# same env (DATABASE_URL etc.) as the runtime service.
+preDeployCommand = ["dotnet", "/app/migrator/FiveNine-Collective.Site.Migrations.dll"]
+
+# Standard restart-on-failure for the server itself.
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10

@@ -8,11 +8,33 @@
 ## Project layout
 
 ```
-projects/FiveNine-Collective.Site/Src/
-  frontend/          # React/Vite SPA (Auth0 PKCE, TypeScript)
-  FiveNine-Collective.Site.Server/   # ASP.NET Core API (JWT bearer auth)
-  FiveNine-Collective.Site.AppHost/  # .NET Aspire orchestration host
+projects/FiveNine-Collective.Site/
+  Dockerfile           # Multi-stage build: frontend, server, migrator into one image
+  railway.toml         # Railway deploy config (preDeployCommand runs the migrator)
+  Src/
+    frontend/                              # React/Vite SPA (Auth0 PKCE, TypeScript)
+    FiveNine-Collective.Site.Data/         # Class library: AppDbContext + entities + EF Core migrations
+    FiveNine-Collective.Site.Migrations/   # One-shot console app — applies EF migrations
+    FiveNine-Collective.Site.Server/       # ASP.NET Core API (JWT bearer auth) — no longer migrates itself
+    FiveNine-Collective.Site.AppHost/      # .NET Aspire orchestration host
 ```
+
+## Database migrations
+
+Schema lives in `Src/FiveNine-Collective.Site.Data/Migrations/`. The `Data` project owns `AppDbContext`; the `Migrations` console project applies pending migrations and exits.
+
+**Add a new migration:**
+```bash
+dotnet ef migrations add <Name> \
+  --project Src/FiveNine-Collective.Site.Data \
+  --startup-project Src/FiveNine-Collective.Site.Migrations
+```
+
+**Apply locally:** the Aspire AppHost runs the migrator on every session via `WaitForCompletion(migrator)` — the server resource stays in "Waiting" until migrations finish.
+
+**Apply on Railway:** `railway.toml` declares the migrator as the `preDeployCommand`. Railway runs it in the freshly-built image against production env vars before promoting the new revision. A non-zero exit aborts the deploy.
+
+The server itself **does not** migrate on startup. If the migrator hasn't run, the server will boot against a stale schema and likely fail on first query — that's intentional (fail-fast).
 
 ## Infrastructure
 
@@ -114,8 +136,10 @@ Auth0 config is baked into `appsettings.json` (`Auth0:Domain`, `Auth0:Audience`)
 | `ALLOWED_ORIGINS` | `https://${{frontend.RAILWAY_PUBLIC_DOMAIN}}` |
 | `ConnectionStrings__fiveninedb` | `Host=${{Postgres.PGHOST}};Port=5432;Database=${{Postgres.PGDATABASE}};Username=${{Postgres.PGUSER}};Password=${{Postgres.PGPASSWORD}};SSL Mode=Require;Trust Server Certificate=true` |
 
-Watch pattern: `projects/FiveNine-Collective.Site/Src/FiveNine-Collective.Site.Server/**`
+Watch pattern: `projects/FiveNine-Collective.Site/Src/**` (any change in Data, Migrations, or Server should rebuild — Dockerfile bundles all three into one image)
+
+Builder: **Dockerfile** at `projects/FiveNine-Collective.Site/Dockerfile`. Produces a single image containing the server at `/app/server`, the migrator at `/app/migrator`, and the frontend at `/app/server/wwwroot`.
 
 Health check path: `/health` (from Aspire service defaults — Railway waits for 200 before routing traffic).
 
-Pre-deploy command: `dotnet FiveNine-Collective.Site.Server.dll --migrate-only` — runs EF Core migrations before the new instance starts serving. The app also runs migrations on startup as a fallback. Pass `--migrate-only` to add a new migration runner entry point (see `Program.cs`).
+Pre-deploy command: `dotnet /app/migrator/FiveNine-Collective.Site.Migrations.dll` — applies pending EF Core migrations against the production DB before the new revision is promoted. Non-zero exit aborts the deploy. Configured in `railway.toml`.

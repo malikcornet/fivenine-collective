@@ -1,41 +1,63 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useStudioQuery, useSaveMyWidgets } from './useStudio'
-import { StudioCanvas } from './components/StudioCanvas'
-import { StudioDock } from './components/StudioDock'
-import { useStudioDrag } from './hooks/useStudioDrag'
+import { DebugLabel } from '../../components/DebugLabel'
+import { useStudioQuery, useSaveMyWidgets, useCreateWidget } from './data/useStudio'
+import { useStudioHub } from './realtime/useStudioHub'
+import { StudioCanvas } from './canvas/StudioCanvas'
+import { StudioDock } from './hud/StudioDock'
+import { StudioHud } from './hud/StudioHud'
+import { PeerCursorsLayer } from './hud/PeerCursorsLayer'
+import { useStudioDrag } from './canvas/useStudioDrag'
 import {
+  MAX_ZOOM,
   useViewport,
   type ScrollLock,
   type ViewState,
-} from './hooks/useViewport'
+} from './canvas/useViewport'
 import {
   NAV_H,
   STEP_X,
   STEP_Y,
-  defaultData,
   findSnapTarget,
   getSnapTargets,
-  nextDraftId,
   type BoundsRect,
   type SnapKind,
   type SnapTarget,
-  type Widget,
-  type WidgetType,
-} from './model'
-import { MAX_ZOOM } from './hooks/useViewport'
+} from './model/bounds'
+import { isDraftId, nextDraftId, type Widget, type WidgetType } from './model/widget'
+import { type CanvasItemKind, isProfile } from './model/canvasItem'
+import { WIDGET_CATALOG } from './widgets/catalog'
 
 export function StudioPage() {
   const { data: studio, isLoading, error } = useStudioQuery()
   const saveMutation = useSaveMyWidgets()
+  const createMutation = useCreateWidget()
   const [widgets, setWidgetsState] = useState<Widget[] | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const widgetsRef = useRef<Widget[] | null>(null)
   widgetsRef.current = widgets
   const didFitRef = useRef(false)
   const currentProfileId = studio?.currentProfileId ?? ''
+  const currentUserSub = useMemo(() => {
+    if (!studio || !currentProfileId) return ''
+    const me = studio.canvasItems.find(i => i.id === currentProfileId)
+    return me?.ownerSub ?? ''
+  }, [studio, currentProfileId])
+
+  // Edit rights for a widget: profile widgets are editable by their owner;
+  // project widgets are editable by the project's creator and listed
+  // collaborators (server enforces — this is the UI gate).
   const canEditWidget = useCallback(
-    (w: Widget | null | undefined) => !!w && w.profileId === currentProfileId,
-    [currentProfileId],
+    (w: Widget | null | undefined): boolean => {
+      if (!w || !studio) return false
+      const container = studio.canvasItems.find(i => i.id === w.canvasItemId)
+      if (!container) return false
+      if (isProfile(container)) return container.id === currentProfileId
+      return (
+        container.ownerSub === currentUserSub ||
+        container.collaboratorSubs.includes(currentUserSub)
+      )
+    },
+    [studio, currentProfileId, currentUserSub],
   )
 
   const scrollLockRef = useRef<ScrollLock | null>(null)
@@ -50,71 +72,136 @@ export function StudioPage() {
     if (studio && widgets === null) setWidgetsState(studio.widgets)
   }, [studio, widgets])
 
-  // Own widgets (the only ones the user can edit + the only ones the server
-  // accepts). Used both for the autosave trigger and the post-save reconcile.
-  const ownWidgets = useMemo(
-    () => (widgets && currentProfileId ? widgets.filter(w => w.profileId === currentProfileId) : []),
-    [widgets, currentProfileId],
+  // Widgets the user can edit (across every container they have rights on).
+  // Drives autosave and the post-save reconcile.
+  const editableWidgets = useMemo(
+    () => (widgets ? widgets.filter(canEditWidget) : []),
+    [widgets, canEditWidget],
   )
-  const ownWidgetsKey = useMemo(() => JSON.stringify(ownWidgets), [ownWidgets])
+  // Autosave (PUT) only handles persisted widgets. Drafts are owned by their
+  // in-flight POST create — excluding them here means the user can move a
+  // freshly-created widget without the autosave racing the create.
+  const savableEditableWidgets = useMemo(
+    () => editableWidgets.filter(w => !isDraftId(w.id)),
+    [editableWidgets],
+  )
+  const savableKey = useMemo(() => JSON.stringify(savableEditableWidgets), [savableEditableWidgets])
   const lastSavedKeyRef = useRef<string | null>(null)
-  const savingRef = useRef(false)
+  const [isSaving, setIsSaving] = useState(false)
 
   // Seed last-saved on initial load so we don't immediately re-save the data
   // we just fetched.
   useEffect(() => {
     if (studio && lastSavedKeyRef.current === null && currentProfileId) {
       lastSavedKeyRef.current = JSON.stringify(
-        studio.widgets.filter(w => w.profileId === currentProfileId),
+        studio.widgets.filter(w => canEditWidget(w) && !isDraftId(w.id)),
       )
     }
-  }, [studio, currentProfileId])
+  }, [studio, currentProfileId, canEditWidget])
 
-  // Debounced autosave of the user's own widgets.
+  // Debounced autosave of the user's editable widgets. Only one request is
+  // ever in flight; when isSaving flips false the effect re-runs.
   useEffect(() => {
     if (!currentProfileId || !widgets) return
-    if (lastSavedKeyRef.current === ownWidgetsKey) return
-    if (savingRef.current) return
+    if (lastSavedKeyRef.current === savableKey) return
+    if (isSaving) return
     const t = setTimeout(() => {
-      savingRef.current = true
-      saveMutation.mutate(ownWidgets, {
+      const snapshot = savableEditableWidgets
+      const snapshotKey = savableKey
+      setIsSaving(true)
+      saveMutation.mutate(snapshot, {
         onSuccess: studio => {
-          // Replace own widgets in local state with canonical server versions
-          // (draft- ids -> real GUIDs). Preserve other profiles' widgets.
+          // Server response is authoritative for persisted widgets across the
+          // containers the caller can edit. Drafts and other-container
+          // widgets are preserved from local state.
           setWidgetsState(prev => {
             if (!prev) return studio.widgets
-            const others = prev.filter(w => w.profileId !== studio.currentProfileId)
-            const mine = studio.widgets.filter(w => w.profileId === studio.currentProfileId)
-            return [...others, ...mine]
+            const editableIds = new Set(
+              studio.widgets
+                .filter(w => {
+                  const c = studio.canvasItems.find(i => i.id === w.canvasItemId)
+                  if (!c) return false
+                  if (isProfile(c)) return c.id === studio.currentProfileId
+                  // For projects, trust the server: it returned widgets we
+                  // could edit, so include them.
+                  return true
+                })
+                .map(w => w.canvasItemId),
+            )
+            const others = prev.filter(w => !editableIds.has(w.canvasItemId))
+            const drafts = prev.filter(
+              w => editableIds.has(w.canvasItemId) && isDraftId(w.id),
+            )
+            const saved = studio.widgets.filter(w => editableIds.has(w.canvasItemId))
+            return [...others, ...saved, ...drafts]
           })
-          lastSavedKeyRef.current = JSON.stringify(
-            studio.widgets.filter(w => w.profileId === studio.currentProfileId),
-          )
+          lastSavedKeyRef.current = snapshotKey
         },
         onSettled: () => {
-          savingRef.current = false
+          setIsSaving(false)
         },
       })
     }, 800)
     return () => clearTimeout(t)
-  }, [ownWidgetsKey, ownWidgets, widgets, currentProfileId, saveMutation])
+  }, [savableKey, savableEditableWidgets, widgets, currentProfileId, isSaving, saveMutation])
 
   const setWidgets = useCallback((updater: (prev: Widget[]) => Widget[]) => {
     setWidgetsState(prev => (prev ? updater(prev) : prev))
   }, [])
+
+  const applyRemoteWidgets = useCallback(
+    (canvasItemId: string, incoming: Widget[]) => {
+      setWidgetsState(prev => {
+        if (!prev) return prev
+        const others = prev.filter(w => w.canvasItemId !== canvasItemId)
+        return [...others, ...incoming]
+      })
+    },
+    [],
+  )
+  const applyRemoteUpsert = useCallback((widget: Widget) => {
+    setWidgetsState(prev => {
+      if (!prev) return prev
+      const idx = prev.findIndex(w => w.id === widget.id)
+      if (idx === -1) return [...prev, widget]
+      const next = prev.slice()
+      next[idx] = widget
+      return next
+    })
+  }, [])
+  const { peers, sendCursor } = useStudioHub({
+    currentProfileId: currentProfileId || null,
+    onRemoteWidgets: applyRemoteWidgets,
+    onRemoteUpsert: applyRemoteUpsert,
+  })
 
   const {
     drag,
     onWidgetPointerDown,
     onResizePointerDown,
     onViewportPointerDown,
-    onPointerMove,
+    onPointerMove: onDragPointerMove,
     onPointerUp,
   } = useStudioDrag({ zoom, setView, setWidgets, setSelectedId })
 
+  const onPointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      onDragPointerMove(e)
+      const el = viewportRef.current
+      if (el) {
+        const rect = el.getBoundingClientRect()
+        const x = (e.clientX - rect.left - pan.x) / zoom
+        const y = (e.clientY - rect.top - pan.y) / zoom
+        sendCursor(x, y)
+      }
+    },
+    [onDragPointerMove, viewportRef, pan.x, pan.y, zoom, sendCursor],
+  )
+
   const addWidget = useCallback(
-    (type: WidgetType) => {
-      if (!currentProfileId) return
+    (type: WidgetType, targetContainerId: string, targetKind: CanvasItemKind) => {
+      if (!targetContainerId) return
+      if (!WIDGET_CATALOG[type].allowedIn.includes(targetKind)) return
       const el = viewportRef.current
       let col = 0,
         row = 0
@@ -124,19 +211,29 @@ export function StudioPage() {
         col = Math.round(cx / STEP_X)
         row = Math.round(cy / STEP_Y)
       }
-      setWidgets(prev => [
-        ...prev,
-        makeWidget(type, {
-          id: nextDraftId(),
-          profileId: currentProfileId,
-          col,
-          row,
-          w: 4,
-          h: 3,
-        }),
-      ])
+      const draft = makeWidget(type, targetKind, {
+        id: nextDraftId(),
+        canvasItemId: targetContainerId,
+        col,
+        row,
+        w: 4,
+        h: 3,
+      })
+      // Optimistic insert. Each click fires its own POST; the per-user
+      // semaphore on the server serializes them so spam-creates land cleanly.
+      setWidgets(prev => [...prev, draft])
+      createMutation.mutate(draft, {
+        onSuccess: created => {
+          setWidgets(prev =>
+            prev.map(w => (w.id === draft.id ? { ...w, id: created.id } : w)),
+          )
+        },
+        onError: () => {
+          setWidgets(prev => prev.filter(w => w.id !== draft.id))
+        },
+      })
     },
-    [pan.x, pan.y, zoom, viewportRef, setWidgets, currentProfileId],
+    [pan.x, pan.y, zoom, viewportRef, setWidgets, createMutation],
   )
 
   const openSnap = useCallback(
@@ -146,10 +243,6 @@ export function StudioPage() {
       const b = target.bounds
       const fit = computeFitView(b, el.clientWidth)
       const v = view
-      // Two-phase: slow pan at the current zoom to put bounds.top at NAV_H and
-      // bounds.centerX at viewport center, then zoom in to fit. Both phases keep
-      // bounds.top fixed at NAV_H (the linear lerp between matching anchors
-      // preserves the anchor).
       const interim: ViewState = {
         zoom: v.zoom,
         pan: {
@@ -176,14 +269,31 @@ export function StudioPage() {
     [widgets, openSnap],
   )
 
-  const fitToBounds = useCallback(() => {
+  const snapToProfile = useCallback(() => {
     if (currentProfileId) openSnapById('profile', currentProfileId)
   }, [openSnapById, currentProfileId])
+
+  const recenter = useCallback(() => {
+    if (!widgets || !currentProfileId) return
+    const el = viewportRef.current
+    if (!el) return
+    const target = findSnapTarget(widgets, 'profile', currentProfileId)
+    if (!target) return
+    const fit = computeFitView(target.bounds, el.clientWidth)
+    const zoom = fit.zoom * 0.9
+    const b = target.bounds
+    easeTo({
+      zoom,
+      pan: {
+        x: el.clientWidth / 2 - b.centerX * zoom,
+        y: el.clientHeight / 2 - (b.top + b.height / 2) * zoom,
+      },
+    })
+  }, [widgets, currentProfileId, viewportRef, easeTo])
 
   useEffect(() => {
     if (!didFitRef.current && widgets && widgets.length > 0 && currentProfileId) {
       didFitRef.current = true
-      // Initial fit on page load: jump (no animation) to the current user's profile.
       const el = viewportRef.current
       const target = findSnapTarget(widgets, 'profile', currentProfileId)
       if (el && target) setView(computeFitView(target.bounds, el.clientWidth))
@@ -191,8 +301,6 @@ export function StudioPage() {
   }, [widgets, viewportRef, setView, currentProfileId])
 
   // Locked onto a snap target when zoom + horizontal pan match its fit view.
-  // pan.y is free — the user scrolls vertically through the target like a web
-  // page. Changing zoom or panning horizontally exits the lock.
   const snapInfo = (() => {
     const el = viewportRef.current
     if (!el || !widgets) return null
@@ -203,9 +311,6 @@ export function StudioPage() {
         Math.abs(zoom - fit.zoom) / fit.zoom < 0.005 &&
         Math.abs(pan.x - fit.pan.x) < 1
       ) {
-        // Webpage-like scroll: top of bounds aligns with NAV_H (maxY), bottom of
-        // bounds aligns with viewport bottom (minY). If content fits in view,
-        // there's nothing to scroll.
         const maxY = fit.pan.y
         const minY = Math.min(maxY, el.clientHeight - (b.top + b.height) * fit.zoom)
         return { minY, maxY, target: t }
@@ -216,9 +321,6 @@ export function StudioPage() {
   const atSnap = snapInfo !== null
   scrollLockRef.current = snapInfo
 
-  // Keep the snap fitted to the viewport as it resizes (window resize,
-  // orientation change, mobile URL bar collapse, etc.). pan.y is preserved so
-  // the user's vertical scroll position stays put across the refit.
   const snappedKey = snapInfo ? `${snapInfo.target.kind}:${snapInfo.target.id}` : null
   const snappedTargetRef = useRef<SnapTarget | null>(null)
   snappedTargetRef.current = snapInfo?.target ?? null
@@ -242,8 +344,6 @@ export function StudioPage() {
     ro.observe(el)
     return () => ro.disconnect()
   }, [snappedKey, viewportRef, setView])
-  // Treat the entering-snap animation as part of the snapped UI state so the
-  // dock doesn't flash back during the transition into a profile.
   const inSnap = atSnap || snapState === 'snapping'
 
   useEffect(() => {
@@ -252,9 +352,9 @@ export function StudioPage() {
 
   const snappedLabel = (() => {
     if (!snapInfo || !studio) return null
-    if (snapInfo.target.kind !== 'profile') return null
-    const profile = studio.profiles.find(p => p.id === snapInfo.target.id)
-    return profile?.name.trim() || 'Profile'
+    const item = studio.canvasItems.find(i => i.id === snapInfo.target.id)
+    if (!item) return null
+    return item.name.trim() || (item.kind === 'project' ? 'Project' : 'Profile')
   })()
 
   useEffect(() => {
@@ -270,7 +370,6 @@ export function StudioPage() {
   const exitSnap = useCallback(() => {
     const el = viewportRef.current
     if (!el) return
-    // Zoom out 20% anchored on viewport center — enough to leave the lock band.
     const cx = el.clientWidth / 2
     const cy = el.clientHeight / 2
     const factor = 0.8
@@ -305,13 +404,12 @@ export function StudioPage() {
     setWidgets(prev => {
       const target = prev.find(w => w.id === selectedId)
       if (!target) return prev
-      if (target.profileId !== currentProfileId) return prev
+      if (!canEditWidget(target)) return prev
       return prev.filter(w => w.id !== selectedId)
     })
     setSelectedId(null)
-  }, [selectedId, setWidgets, currentProfileId])
+  }, [selectedId, setWidgets, canEditWidget])
 
-  // Delete/Backspace removes selected widget when canvas owns focus.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Delete' && e.key !== 'Backspace') return
@@ -349,12 +447,23 @@ export function StudioPage() {
     )
   }
 
+  // Decide which container the dock should target. While snapped onto a
+  // container the caller can edit, new widgets go there. Otherwise default
+  // to the caller's profile.
+  const snappedContainer = snapInfo
+    ? studio?.canvasItems.find(i => i.id === snapInfo.target.id) ?? null
+    : null
+  const dockContainer = snappedContainer ?? studio?.canvasItems.find(i => i.id === currentProfileId) ?? null
+  const dockKind: CanvasItemKind = dockContainer?.kind ?? 'profile'
+  const dockContainerId = dockContainer?.id ?? currentProfileId
+
   return (
     <main className="studio-page studio-page--infinite">
+      <DebugLabel name="StudioPage" />
       <StudioCanvas
         viewportRef={setViewportRef}
         widgets={widgets}
-        profiles={studio?.profiles ?? []}
+        canvasItems={studio?.canvasItems ?? []}
         selectedId={selectedId}
         pan={pan}
         zoom={zoom}
@@ -393,20 +502,18 @@ export function StudioPage() {
               }
         }
       >
+        <PeerCursorsLayer peers={peers} pan={pan} zoom={zoom} />
         {!inSnap && (
           <StudioDock
+            containerKind={dockKind}
             canDelete={canDelete}
-            onAdd={addWidget}
+            onAdd={t => addWidget(t, dockContainerId, dockKind)}
             onDelete={deleteSelected}
-            onRecenter={fitToBounds}
+            onRecenter={recenter}
+            onSnapToProfile={snapToProfile}
           />
         )}
-<div className="studio-hud">
-          <span>{Math.round(zoom * 100)}%</span>
-          <span className="studio-hud-hint">
-            drag empty space to pan • scroll or Ctrl +/- to zoom • Delete to remove
-          </span>
-        </div>
+        {!inSnap && <StudioHud zoom={zoom} />}
       </StudioCanvas>
     </main>
   )
@@ -437,11 +544,14 @@ const noopSelect = () => {}
 
 function makeWidget<T extends WidgetType>(
   type: T,
-  base: { id: string; profileId: string; col: number; row: number; w: number; h: number },
+  canvasItemKind: CanvasItemKind,
+  base: { id: string; canvasItemId: string; col: number; row: number; w: number; h: number },
 ): Widget {
-  // TS can't narrow {type: T, data: WidgetData<T>} to the union; the function
-  // signature enforces it for callers.
-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-  return { ...base, type, data: defaultData(type) } as Widget
+  return {
+    ...base,
+    canvasItemKind,
+    type,
+    data: WIDGET_CATALOG[type].defaultData,
+  } as Widget
 }
 StudioPage.displayName = 'StudioPage'

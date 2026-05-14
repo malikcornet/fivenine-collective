@@ -17,7 +17,8 @@ public static class CorsExtensions
                 policy
                     .WithOrigins(allowedOrigins)
                     .AllowAnyHeader()
-                    .AllowAnyMethod()));
+                    .AllowAnyMethod()
+                    .AllowCredentials()));
 
         return services;
     }

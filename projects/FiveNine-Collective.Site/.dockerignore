@@ -1,0 +1,41 @@
+# Anything matched here is excluded from the Docker build context. Keeping
+# the context lean speeds up `docker build` upload, keeps layer cache hits
+# stable across machines, and prevents accidentally baking secrets or
+# stale build artifacts into the image.
+
+# .NET build outputs (per-project bin/obj at any depth)
+**/bin/
+**/obj/
+
+# Node
+**/node_modules/
+**/dist/
+**/.vite/
+**/coverage/
+
+# IDE / editor state
+.vs/
+.idea/
+.vscode/
+**/*.user
+**/*.suo
+
+# Claude Code worktrees & local prompt cache (large, irrelevant to the build)
+.claude/
+
+# VCS
+.git/
+.gitignore
+.gitattributes
+
+# Local-only secrets (kept out of the image)
+**/.env
+**/.env.local
+**/.env.development.local
+**/.env.production.local
+**/appsettings.Development.json
+
+# Docs & meta (not needed at runtime — comment out if the runtime serves them)
+README.md
+AGENTS.md
+.github/

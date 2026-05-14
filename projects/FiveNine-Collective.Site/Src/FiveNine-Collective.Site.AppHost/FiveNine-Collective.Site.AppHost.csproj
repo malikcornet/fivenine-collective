@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\FiveNine-Collective.Site.Server\FiveNine-Collective.Site.Server.csproj" />
+    <ProjectReference Include="..\FiveNine-Collective.Site.Migrations\FiveNine-Collective.Site.Migrations.csproj" />
   </ItemGroup>
 
   <ItemGroup>

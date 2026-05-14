@@ -3,8 +3,9 @@ using System.Text.Json;
 namespace FiveNine_Collective_Site_Server.Contracts;
 
 /// <summary>
-/// Payload for PUT /api/studio/widgets — the caller's full widget set.
-/// Server replaces all widgets for the caller's profile with this list.
+/// Payload for PUT /api/studio/widgets — the caller's full widget set across
+/// every container they can edit (their own profile, plus any project they
+/// collaborate in). Server replaces each container's widgets independently.
 /// </summary>
 public record UpdateWidgetsRequest(List<WidgetInput> Widgets);
 
@@ -14,6 +15,7 @@ public record UpdateWidgetsRequest(List<WidgetInput> Widgets);
 /// </summary>
 public record WidgetInput(
     string Id,
+    Guid CanvasItemId,
     string Type,
     int Col,
     int Row,

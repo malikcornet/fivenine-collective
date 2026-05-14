@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth0 } from '@auth0/auth0-react'
+import { DebugLabel } from './DebugLabel'
 
 interface SnapInfo {
   on: boolean
@@ -59,6 +60,7 @@ function NavMenu({ label, ariaLabel, items, triggerClassName }: NavMenuProps) {
 
   return (
     <div className="navbar-menu" ref={rootRef}>
+      <DebugLabel name="NavMenu" />
       <button
         type="button"
         className={triggerClassName ?? 'navbar-studio-link'}
@@ -106,6 +108,7 @@ export function NavBar() {
 
   return (
     <nav className="navbar" aria-label="Main navigation">
+      <DebugLabel name="NavBar" />
       <Link to="/" className="navbar-brand">
         FiveNine
       </Link>
