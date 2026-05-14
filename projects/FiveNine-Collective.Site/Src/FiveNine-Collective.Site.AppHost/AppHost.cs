@@ -1,3 +1,6 @@
+using Aspire.Hosting.ApplicationModel;
+using Microsoft.Extensions.DependencyInjection;
+
 var builder = DistributedApplication.CreateBuilder(args);
 
 var postgres = builder.AddPostgres("postgres")
@@ -24,12 +27,38 @@ var migrator = builder.AddProject<Projects.FiveNine_Collective_Site_Migrations>(
 // under it in the dashboard via WithParentRelationship and not auto-started
 // (WithExplicitStart) — click "Start" on the dashboard to insert the demo
 // project. Idempotent: re-running is a no-op once any project exists.
-builder.AddProject<Projects.FiveNine_Collective_Site_Migrations>("seeder")
+var seeder = builder.AddProject<Projects.FiveNine_Collective_Site_Migrations>("seeder")
     .WithReference(db)
     .WithArgs("--seed-only", "--confirm-wipe")
     .WaitForCompletion(migrator)
     .WithParentRelationship(migrator)
     .WithExplicitStart();
+
+// Dashboard button on the database: wipes CanvasItems and re-runs the seeder.
+// Delegates to the seeder resource's built-in `resource-start` command so the
+// actual work still happens inside the migrator binary (one source of truth
+// for seed logic). Enabled only once Postgres is healthy.
+db.WithCommand(
+    name: "reseed-database",
+    displayName: "Reseed database",
+    executeCommand: async ctx =>
+    {
+        var commands = ctx.ServiceProvider.GetRequiredService<ResourceCommandService>();
+        return await commands.ExecuteCommandAsync(
+            seeder.Resource,
+            "resource-start",
+            ctx.CancellationToken);
+    },
+    commandOptions: new CommandOptions
+    {
+        Description = "Truncates CanvasItems and inserts fresh demo data (6 fake profiles + demo project).",
+        ConfirmationMessage = "This wipes all canvas data. Continue?",
+        IconName = "DatabaseArrowRight",
+        IconVariant = IconVariant.Filled,
+        UpdateState = ctx => ctx.ResourceSnapshot.HealthStatus is Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Healthy
+            ? ResourceCommandState.Enabled
+            : ResourceCommandState.Disabled,
+    });
 
 var server = builder.AddProject<Projects.FiveNine_Collective_Site_Server>("server")
     .WithReference(db)

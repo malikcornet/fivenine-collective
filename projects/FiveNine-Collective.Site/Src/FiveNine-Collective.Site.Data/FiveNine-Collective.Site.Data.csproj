@@ -8,6 +8,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Fake-data generator used by Seeder. Maps to model properties by name,
+         so model evolution stays compatible as long as property names hold. -->
+    <PackageReference Include="Bogus" Version="35.6.1" />
     <!-- Runtime EF Core provider. Server + Migrations both depend on this transitively. -->
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
     <!-- Design-time tools (dotnet ef migrations add). PrivateAssets keeps this out of dependent

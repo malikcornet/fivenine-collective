@@ -38,6 +38,18 @@ public class ProfileItem : CanvasItem
 
     /// <summary>One-line bio.</summary>
     public string Bio { get; set; } = "";
+
+    /// <summary>Given name collected during onboarding. Null until the user
+    /// completes the onboarding wizard.</summary>
+    public string? FirstName { get; set; }
+
+    /// <summary>Family name collected during onboarding. Null until the user
+    /// completes the onboarding wizard.</summary>
+    public string? LastName { get; set; }
+
+    /// <summary>Set when the user finishes onboarding. Null = onboarding
+    /// still required on next login.</summary>
+    public DateTimeOffset? OnboardedAt { get; set; }
 }
 
 /// <summary>

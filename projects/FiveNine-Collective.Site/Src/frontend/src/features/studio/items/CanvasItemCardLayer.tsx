@@ -5,8 +5,8 @@ import type { CanvasItem } from '../model/canvasItem'
 import type { Widget } from '../model/widget'
 import { CanvasItemCard } from './CanvasItemCard'
 
-const CARD_WIDTH = 800
-const CARD_HEIGHT = 1000
+const CARD_WIDTH = 1400
+const CARD_HEIGHT = 1750
 
 interface Props {
   widgets: Widget[]

@@ -6,9 +6,14 @@ import { NavBar } from './components/NavBar'
 import { RequireAuth } from './components/RequireAuth'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { HomePage } from './pages/HomePage'
+import { RequireOnboarding } from './features/onboarding/RequireOnboarding'
 
 const StudioPage = lazy(() =>
   import('./features/studio/StudioPage').then(m => ({ default: m.StudioPage })),
+)
+
+const OnboardingPage = lazy(() =>
+  import('./features/onboarding/OnboardingPage').then(m => ({ default: m.OnboardingPage })),
 )
 
 function App() {
@@ -39,10 +44,20 @@ function App() {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route
+              path="/onboarding"
+              element={
+                <RequireAuth>
+                  <OnboardingPage />
+                </RequireAuth>
+              }
+            />
+            <Route
               path="/studio"
               element={
                 <RequireAuth>
-                  <StudioPage />
+                  <RequireOnboarding>
+                    <StudioPage />
+                  </RequireOnboarding>
                 </RequireAuth>
               }
             />

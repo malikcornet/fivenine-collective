@@ -37,6 +37,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .HasDatabaseName("IX_CanvasItems_ProfileAuth0Sub");
             e.Property(p => p.Role).HasMaxLength(120).IsRequired();
             e.Property(p => p.Bio).HasMaxLength(280).IsRequired();
+            e.Property(p => p.FirstName).HasMaxLength(80);
+            e.Property(p => p.LastName).HasMaxLength(80);
         });
 
         modelBuilder.Entity<ProjectItem>(e =>

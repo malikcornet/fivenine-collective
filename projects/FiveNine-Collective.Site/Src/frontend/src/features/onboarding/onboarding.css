@@ -1,0 +1,115 @@
+.onboarding {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 1.5rem;
+}
+
+.onboarding-card {
+  width: 100%;
+  max-width: 480px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.onboarding-eyebrow {
+  margin: 0;
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.onboarding-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 3vw, 2.1rem);
+  line-height: 1.15;
+  color: var(--text);
+}
+
+.onboarding-body {
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.onboarding-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.onboarding-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.onboarding-field span {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.onboarding-field input {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  color: var(--text);
+  padding: 0.65rem 0.8rem;
+  font: inherit;
+  outline: none;
+}
+
+.onboarding-field input:focus {
+  border-color: var(--accent);
+}
+
+.onboarding-error {
+  margin: 0;
+  color: #ff6b6b;
+  font-size: 0.85rem;
+}
+
+.onboarding-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
+.onboarding-primary,
+.onboarding-secondary {
+  font: inherit;
+  border-radius: var(--r);
+  padding: 0.65rem 1.2rem;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: opacity 0.15s ease;
+}
+
+.onboarding-primary {
+  background: var(--accent);
+  color: var(--accent-fg);
+  font-weight: 600;
+}
+
+.onboarding-primary:disabled,
+.onboarding-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.onboarding-secondary {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--border);
+}

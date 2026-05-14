@@ -291,12 +291,25 @@ export function StudioPage() {
     })
   }, [widgets, currentProfileId, viewportRef, easeTo])
 
+  // Initial framing: center on the user's profile but stay just out of the
+  // snap-detection threshold (zoom < fit.zoom) so the studio loads in free-pan
+  // mode. Same math as `recenter` so the two entry points stay in sync.
   useEffect(() => {
     if (!didFitRef.current && widgets && widgets.length > 0 && currentProfileId) {
       didFitRef.current = true
       const el = viewportRef.current
       const target = findSnapTarget(widgets, 'profile', currentProfileId)
-      if (el && target) setView(computeFitView(target.bounds, el.clientWidth))
+      if (!el || !target) return
+      const fit = computeFitView(target.bounds, el.clientWidth)
+      const z = fit.zoom * 0.9
+      const b = target.bounds
+      setView({
+        zoom: z,
+        pan: {
+          x: el.clientWidth / 2 - b.centerX * z,
+          y: el.clientHeight / 2 - (b.top + b.height / 2) * z,
+        },
+      })
     }
   }, [widgets, viewportRef, setView, currentProfileId])
 
