@@ -18,26 +18,15 @@ export interface BoundsRect {
   centerY: number
 }
 
-/** Something the viewport can snap-fit onto. Mirrors {@link CanvasItemKind} — every
- *  CanvasItem with at least one widget produces a snap target. */
-export type SnapKind = CanvasItemKind
-
-export interface SnapTarget {
-  kind: SnapKind
-  /** The CanvasItem id. */
-  id: string
-  bounds: BoundsRect
-}
-
 export interface CanvasItemBoundsEntry extends BoundsRect {
   canvasItemId: string
-  kind: SnapKind
+  kind: CanvasItemKind
 }
 
 /** One bounds rectangle per CanvasItem, grouping widgets by canvasItemId. The
  *  kind comes from the widget's denormalized canvasItemKind. */
 export function getCanvasItemBoundsList(widgets: Widget[]): CanvasItemBoundsEntry[] {
-  const groups = new Map<string, { kind: SnapKind; widgets: Widget[] }>()
+  const groups = new Map<string, { kind: CanvasItemKind; widgets: Widget[] }>()
   for (const w of widgets) {
     let g = groups.get(w.canvasItemId)
     if (!g) {
@@ -54,36 +43,16 @@ export function getCanvasItemBoundsList(widgets: Widget[]): CanvasItemBoundsEntr
   return result
 }
 
-/** Bounds for a single CanvasItem's widgets, or null if it has none. */
-export function getCanvasItemBounds(widgets: Widget[], canvasItemId: string) {
+/** Bounds rect for a single CanvasItem identified by id, or null if it has
+ *  no widgets. Used to frame the camera when entering/exiting a dimension. */
+export function findCanvasItemBoundsById(
+  widgets: Widget[],
+  canvasItemId: string,
+): BoundsRect | null {
   return getStudioBounds(widgets.filter(w => w.canvasItemId === canvasItemId))
 }
 
-/** All snap targets in the studio — one per CanvasItem. */
-export function getSnapTargets(widgets: Widget[]): SnapTarget[] {
-  return getCanvasItemBoundsList(widgets).map(p => ({
-    kind: p.kind,
-    id: p.canvasItemId,
-    bounds: {
-      left: p.left,
-      top: p.top,
-      width: p.width,
-      height: p.height,
-      centerX: p.centerX,
-      centerY: p.centerY,
-    },
-  }))
-}
-
-export function findSnapTarget(
-  widgets: Widget[],
-  kind: SnapKind,
-  id: string,
-): SnapTarget | null {
-  return getSnapTargets(widgets).find(t => t.kind === kind && t.id === id) ?? null
-}
-
-export function getStudioBounds(widgets: Widget[]) {
+export function getStudioBounds(widgets: Widget[]): BoundsRect | null {
   if (widgets.length === 0) return null
   let minCol = Infinity,
     minRow = Infinity,

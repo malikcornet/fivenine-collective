@@ -2,24 +2,28 @@ import { memo } from 'react'
 import { DebugLabel } from '../../../components/DebugLabel'
 import { WidgetBody } from './WidgetBody'
 import { STEP_X, STEP_Y } from '../model/bounds'
-import type { Widget } from '../model/widget'
+import type { Widget, WidgetData, WidgetType } from '../model/widget'
 
 interface Props {
   widget: Widget
   selected: boolean
   readOnly?: boolean
+  editMode: boolean
   onPointerDown: (e: React.PointerEvent, w: Widget) => void
   onResizePointerDown: (e: React.PointerEvent, w: Widget) => void
   onSelect: (id: string) => void
+  onUpdateData: <T extends WidgetType>(id: string, data: WidgetData<T>) => void
 }
 
 function StudioWidgetImpl({
   widget,
   selected,
   readOnly,
+  editMode,
   onPointerDown,
   onResizePointerDown,
   onSelect,
+  onUpdateData,
 }: Props) {
   return (
     <div
@@ -47,7 +51,7 @@ function StudioWidgetImpl({
       }}
     >
       <DebugLabel name={`StudioWidget(${widget.type})`} />
-      <WidgetBody widget={widget} />
+      <WidgetBody widget={widget} editMode={editMode && !readOnly} onUpdateData={onUpdateData} />
       <div
         className="studio-widget-resize"
         onPointerDown={e => onResizePointerDown(e, widget)}

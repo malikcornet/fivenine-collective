@@ -1,16 +1,19 @@
-import type { Ref } from 'react'
+import { useMemo, type Ref } from 'react'
 import { DebugLabel } from '../../../components/DebugLabel'
-import { CanvasItemBoundsLayer } from '../items/CanvasItemBoundsLayer'
 import { CanvasItemCardLayer } from '../items/CanvasItemCardLayer'
 import { StudioWidget } from '../widgets/StudioWidget'
-import { identityOpacity } from './math'
-import { STEP_X, STEP_Y, type SnapTarget } from '../model/bounds'
-import type { DragState, Widget } from '../model/widget'
+import { STEP_X, STEP_Y } from '../model/bounds'
+import type { DragState, Widget, WidgetData, WidgetType } from '../model/widget'
 import type { CanvasItem } from '../model/canvasItem'
+import type { LayoutPosition } from '../model/overviewLayout'
 import type { SnapState } from './useViewport'
+
+export type StudioMode = 'overview' | 'inside'
 
 interface Props {
   viewportRef: Ref<HTMLDivElement>
+  /** Full widget list — used for card positioning in overview mode. The
+   *  actual widget rendering is filtered to the active dimension. */
   widgets: Widget[]
   canvasItems: CanvasItem[]
   selectedId: string | null
@@ -18,7 +21,12 @@ interface Props {
   zoom: number
   drag: DragState
   snapState: SnapState
-  atSnap: boolean
+  mode: StudioMode
+  /** Identity of the CanvasItem the user is "inside". Null in overview. */
+  dimensionId: string | null
+  /** Per-item canvas positions for the overview cards. Used by the layout
+   *  switcher (explorer / space). */
+  cardPositions?: Map<string, LayoutPosition>
   onViewportPointerDown: (e: React.PointerEvent) => void
   onPointerMove: (e: React.PointerEvent) => void
   onPointerUp: () => void
@@ -26,8 +34,9 @@ interface Props {
   onResizePointerDown: (e: React.PointerEvent, w: Widget) => void
   onSelect: (id: string) => void
   isReadOnly: (w: Widget) => boolean
-  onOpenSnap: (target: SnapTarget) => void
-  snappedKey: string | null
+  editMode: boolean
+  onUpdateData: <T extends WidgetType>(id: string, data: WidgetData<T>) => void
+  onEnterDimension: (id: string) => void
   children?: React.ReactNode
 }
 
@@ -40,7 +49,9 @@ export function StudioCanvas({
   zoom,
   drag,
   snapState,
-  atSnap,
+  mode,
+  dimensionId,
+  cardPositions,
   onViewportPointerDown,
   onPointerMove,
   onPointerUp,
@@ -48,21 +59,29 @@ export function StudioCanvas({
   onResizePointerDown,
   onSelect,
   isReadOnly,
-  onOpenSnap,
-  snappedKey,
+  editMode,
+  onUpdateData,
+  onEnterDimension,
   children,
 }: Props) {
   const bgSize = STEP_X * zoom
   const bgSizeY = STEP_Y * zoom
   const dotAlpha = Math.min(1, zoom * zoom)
-  const identityFill = identityOpacity(zoom)
+
+  // In overview mode no widgets are rendered (the constellation of cards is
+  // the whole experience). In inside mode only the active dimension's
+  // widgets render — no peeking at the rest of the canvas.
+  const visibleWidgets = useMemo(() => {
+    if (mode === 'overview') return []
+    return widgets.filter(w => w.canvasItemId === dimensionId)
+  }, [widgets, mode, dimensionId])
 
   return (
     <div
       ref={viewportRef}
       className="studio-viewport"
       data-snap-state={snapState}
-      data-at-snap={atSnap || undefined}
+      data-mode={mode}
       onPointerDown={onViewportPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
@@ -79,36 +98,33 @@ export function StudioCanvas({
         className="studio-canvas"
         style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})` }}
       >
-        <CanvasItemBoundsLayer
-          widgets={widgets}
-          zoom={zoom}
-          snappedKey={snappedKey}
-          onOpenSnap={onOpenSnap}
-        />
-        <CanvasItemCardLayer
-          widgets={widgets}
-          canvasItems={canvasItems}
-          zoom={zoom}
-        />
-        <div
-          className="studio-widgets-layer"
-          style={{
-            opacity: 1 - identityFill,
-            pointerEvents: identityFill === 1 ? 'none' : undefined,
-          }}
-        >
-          {widgets.map(w => (
-            <StudioWidget
-              key={w.id}
-              widget={w}
-              selected={selectedId === w.id}
-              readOnly={isReadOnly(w)}
-              onPointerDown={onWidgetPointerDown}
-              onResizePointerDown={onResizePointerDown}
-              onSelect={onSelect}
-            />
-          ))}
-        </div>
+        {mode === 'overview' && (
+          <CanvasItemCardLayer
+            widgets={widgets}
+            canvasItems={canvasItems}
+            zoom={zoom}
+            alwaysVisible
+            positions={cardPositions}
+            onEnter={onEnterDimension}
+          />
+        )}
+        {mode === 'inside' && (
+          <div className="studio-widgets-layer">
+            {visibleWidgets.map(w => (
+              <StudioWidget
+                key={w.id}
+                widget={w}
+                selected={selectedId === w.id}
+                readOnly={isReadOnly(w)}
+                editMode={editMode}
+                onPointerDown={onWidgetPointerDown}
+                onResizePointerDown={onResizePointerDown}
+                onSelect={onSelect}
+                onUpdateData={onUpdateData}
+              />
+            ))}
+          </div>
+        )}
       </div>
       {children}
     </div>

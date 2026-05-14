@@ -281,6 +281,10 @@ export function useViewport({ getScrollLock }: Options = {}) {
   useEffect(() => {
     if (!viewportEl) return
     const onWheel = (e: WheelEvent) => {
+      // Let overlays that own their own scroll (e.g. the Explorer view) handle
+      // wheel natively. Anything marked with [data-studio-scroll] takes over.
+      const target = e.target as Element | null
+      if (target && target.closest('[data-studio-scroll]')) return
       e.preventDefault()
       // While snap-locked to a profile, plain wheel scrolls vertically through
       // its content like a web page. Ctrl/Cmd+wheel still zooms (so user can
